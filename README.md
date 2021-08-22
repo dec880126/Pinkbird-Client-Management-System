@@ -1,4 +1,8 @@
 # Pinkbird-Client-Management-System
+
+<img src = 'https://user-images.githubusercontent.com/34447298/130364293-bb9d9f77-2397-4571-98cd-894ca79139e0.png' height=50% width=50%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130364251-8e9b2dfb-299b-42f1-865a-1b8397831891.png' height=25% width=25%></img>
+
 透過 Python 以及 MySQL 設計之企業客戶資料庫管理系統
 
 ## 功能
