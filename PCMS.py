@@ -186,7 +186,7 @@ def registeForm_processing():
         print("[*]========================================================================================")
         print("[*]幫助: 範例: 粉鳥旅行社多日遊報名表單範例 (回覆).xlsx    <- 此為檔案名稱")
         print("[*]           通常空格存在於「(回覆)」的前面，刪除空格後程式即可正常執行!")
-        print("[!]提醒: 空格的原因是因為 Goolge 端的設定就是這樣，所以以後在匯入前要留意一下")
+        print("[!]提醒: 空格的原因是因為 Google 端的設定，所以在匯入前要特別留意")
         print("[*]========================================================================================")
         input("[*]請按任意鍵回到 粉鳥旅行社會員資料庫管理系統-功能選擇介面...")
         return
@@ -206,7 +206,12 @@ def registeForm_processing():
         except IndexError:
             print("[!]日期輸入格式錯誤，請重新輸入，並確認格式為: YYYY.MM.DD")
 
-    travelDays = int(input('[?]此次出團為幾日團(輸入數字)? '))
+    while True:
+        try:
+            travelDays = int(input('[?]此次出團為幾日團(輸入數字)? '))
+            break
+        except ValueError:
+            print("[!]輸入格式錯誤，請重新輸入，並確認格式為純數字")
 
     costList = set_cost()
     # <---------- depart date info end ---------->
@@ -662,6 +667,7 @@ def discountCode():
         )
         clientName = '粉鳥旅行社'
     elif mode == 1:
+        # 產生序號： 123456789@@@@@
         prefix = input("[?]輸入客人的身分證字號(包含英文字)： ")
         searcher = conn.cursor()
         searcher.execute(
@@ -676,7 +682,7 @@ def discountCode():
             codeAmount = discountNums, 
             randomAmount = 5, 
             codeValue = discountValue, 
-            prefix = prefix,
+            prefix = prefix[1:],
             clientName = clientName,
             deadline = deadline
         )
@@ -712,7 +718,7 @@ def editClientProfile():
     try:
         preData = f"姓名: {clientData[0]}    身分證字號: {clientData[1]}    生日: {clientData[2]}   電話: {clientData[3]}   餐食: {clientData[4]}   特殊需求: {clientData[5]}   社群暱稱: {clientData[6]}"
     except TypeError:
-        print("[!]資料庫中無此 身分證字號 對應之資料")
+        print(f"[!]資料庫中無 身分證字號: {clientID} 對應之資料")
         return
     print("[*]======================================================客戶目前資料=======================================================")    
     print("[>]" + preData)
@@ -828,7 +834,7 @@ def addClientProfile():
     addClient.foodType = input("[?]請輸入 餐食選項: ")
     addClient.specialNeeds = input("[?]請輸入 特殊需求: ")
     addClient.nickName = input("[?]請輸入 社群暱稱: ")
-    addClient.travelDays = 0
+    addClient.travelDays = 0    # 新進客戶預設為0
     
     editor = conn.cursor()
     editor.execute(
