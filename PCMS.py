@@ -1033,9 +1033,7 @@ if __name__ == '__main__':
             "host": configResult["host"],
             "port": int(configResult["port"]),
             "user": input('[?]帳號: '),
-            # "user": "root",
             "password": input('[?]密碼: '),
-            # "password": "Cyuanz-0126",
             "database": "pinkbird",
             "charset": "utf8"
         }
