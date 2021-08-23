@@ -24,7 +24,7 @@ import secrets
 import package.year_cal as year_cal
 import package.config as config
 
-programVersion = "版本: " + "5.0.2"
+programVersion = "版本: " + "5.0.3"
 
 class Client():
     """
@@ -750,7 +750,7 @@ def editClientProfile():
     
     if editMode == "delete":
         while True:
-            deleteCheck = input(f"[!]確定要刪除 {clientID} 的會員資料嗎(Y/N)? ")
+            deleteCheck = input(f"[!]確定要刪除「{clientID}」的會員資料嗎(Y/N)? ")
             if deleteCheck in ('y', 'Y'):
                 editor.execute(
                     deleteCommand(
@@ -766,7 +766,7 @@ def editClientProfile():
                 print(f"[!]已取消刪除 {clientID} 的會員資料")            
                 return 0
     else:    
-        newValue = input(f"[?]請問要將 {editMode_Dict[editMode]} 改為(請輸入數值)? ")
+        newValue = input(f"[?]請問要將「{editMode_Dict[editMode]}」改為(請輸入數值)? ")
 
         editor.execute(
             editCommand(
@@ -928,7 +928,12 @@ def dataRepeatCheck():
                 repeateID_Dict[idx+1].nickName = searchResult[6]
                 repeateID_Dict[idx+1].travelDays = searchResult[7]
                 print(f"[>]{idx+1}. 姓名: {repeateID_Dict[idx+1].name}\t身分證字號: {repeateID_Dict[idx+1].id}\t生日: {repeateID_Dict[idx+1].birthday}\t電話: {repeateID_Dict[idx+1].phone}\t餐食: {repeateID_Dict[idx+1].foodType}\t特殊需求: {repeateID_Dict[idx+1].specialNeeds}\t暱稱: {repeateID_Dict[idx+1].nickName}\t旅遊天數: {repeateID_Dict[idx+1].travelDays}")
-            selectFromRepeat = int(input("[?]請從以上重複的資料當中，選擇一筆要保存的資料(輸入編號): "))    # reference: repeateID_Dict[ idx+1 ]
+            while True:
+                try:
+                    selectFromRepeat = int(input("[?]請從以上重複的資料當中，選擇一筆要保存的資料(輸入編號): "))    # reference: repeateID_Dict[ idx+1 ]
+                    break
+                except:
+                    input("[!]輸入有誤，請輸入正確的保留版本編號")
             temp = repeateID_Dict[selectFromRepeat]
             selectedList.append(temp)
             print(f"[*]\t保存的版本:\n[*]\t{selectFromRepeat}. 姓名: {temp.name}\t身分證字號: {temp.id}\t生日: {temp.birthday}\t電話: {temp.phone}\t餐食: {temp.foodType}\t特殊需求: {temp.specialNeeds}\t暱稱: {temp.nickName}\t旅遊天數: {temp.travelDays}")
