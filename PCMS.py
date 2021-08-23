@@ -24,7 +24,7 @@ import secrets
 import package.year_cal as year_cal
 import package.config as config
 
-programVersion = "版本: " + "5.0"
+programVersion = "版本: " + "5.0.2"
 
 class Client():
     """
@@ -157,7 +157,6 @@ def registeForm_processing():
             os.system("pause")
             continue
         if departMode in (1, 2):
-            pass
             break
         else:
             print("[!]請重新輸入正確的選項....")
@@ -530,12 +529,15 @@ def xlsx_DataFrame(clientList: list, mode: str) -> DataFrame:
         os.system("pause")
         raise BaseException
 
-def pinkbird_function(functionChoose):
+def pinkbird_function(functionChoose, functionName):
     """
     功能清單
     type functionChoose: str
     """
     clearConsole()
+    print("[*]===============================================")
+    print(f"[*]目前功能: {functionName}")
+    print("[*]===============================================")
     method = functionDefined.get(functionChoose, default)
 
     return method()
@@ -724,7 +726,7 @@ def editClientProfile():
     print("[>]" + preData)
     print("[*]========================================================================================================================")
     print("[*]如果只是要查詢會員資料請在確認完會員資料後輸入「e」即可")
-    print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    delete: 刪除此筆會員資料    e: 取消")
+    print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    delete: 刪除此筆會員資料    e: 不做任何操作")
     editMode_Dict = {
         "1": "姓名",
         "2": "身分證字號",
@@ -732,7 +734,7 @@ def editClientProfile():
         "4": "電話",
         "5": "餐食",
         "6": "特殊需求",
-        "7": "社群暱稱"
+        "7": "暱稱"
     }
 
     while True:
@@ -1095,7 +1097,7 @@ if __name__ == '__main__':
         print("[*]" + "================功能選項================")   
         print("[*]" + "\t  1. 產生出團名冊")
         print("[*]" + "\t  2. 產生折扣碼") 
-        print("[*]" + "\t  3. 編輯或查詢會員資料") 
+        print("[*]" + "\t  3. 會員資料(可查詢、編輯或刪除)") 
         print("[*]" + "\t  4. 手動新增會員資料")
         print("[*]" + "\t  5. 檢查會員資料是否重複")
         print("[*]" + "\t  e. 離開系統")
@@ -1105,8 +1107,8 @@ if __name__ == '__main__':
         
         if functionChoose not in functionDefined:
             print("[*]===============================================")
-            print("[?]請重新輸入功能選單中之數字...")
-            os.system("pause")
+            input("[?]請重新輸入功能選單中之數字...")
+            clearConsole()
             continue
 
         try:
@@ -1125,7 +1127,7 @@ if __name__ == '__main__':
             elif functionChoose == "2":
                 operationName_inChinese = "產生折扣碼"
             elif functionChoose == "3":
-                operationName_inChinese = "編輯會員資料"
+                operationName_inChinese = "會員資料(可查詢、編輯或刪除)"
             elif functionChoose == "4":
                 operationName_inChinese = "手動新增會員資料"
             elif functionChoose == "5":
@@ -1141,7 +1143,7 @@ if __name__ == '__main__':
             )
             # <----- Write Operation Log end ----->
 
-            pinkbird_function(functionChoose)            
+            pinkbird_function(functionChoose, functionName = operationName_inChinese)            
         except Endding:
             pass
         except KeyboardInterrupt:
