@@ -12,19 +12,23 @@ FUNCTION LIST:
 
 ALL OF THE FUNCTION PROVIDED ARE WORKING BASE ON SQL(Structured Query Language)
 """
+# ? Modules
 import pandas as pd
-from pandas.core.frame import DataFrame
 import pymysql
 import datetime
 import sys
 import os
 import string
 import secrets
+import webbrowser
 
+# ? Packages
 import package.year_cal as year_cal
 import package.config as config
+from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand
+from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.0.3"
+programVersion = "版本: " + "5.0.4"
 
 class Client():
     """
@@ -86,61 +90,6 @@ class WrongDepartTypeChoose(Exception):
 class GetOutOfTryExcept(Exception):
     def __init__(self):
         pass
-
-def searchCommand(listFrom: str, key: str, searchBy) -> str:
-    """
-    根據輸入列表，產生搜尋的SQL指令
-
-    SELECT * FROM `會員資料` WHERE '身分證字號' = '~~'
-
-    使用範例: searchCommand(listFrom="會員資料", key="身分證字號", searchBy = idList)
-    """
-    # 如果輸入是單一資料
-    if isinstance(searchBy, str):
-        temp = searchBy
-        tempList = [temp]
-        searchBy = tempList.copy()
-
-    commandEnd = str(tuple(searchBy))
-
-    # 如果輸入是List
-    if commandEnd[-2] == ',':
-        temp = list(commandEnd)
-        temp[-2] = ''
-        commandEnd = ''.join(temp)
-    return "SELECT * FROM `" + listFrom + "` WHERE `" + key + "` IN " + commandEnd
-
-def listAllCommand(listFrom: str) -> str:
-    """
-    根據輸入所給之資料表名稱，產生列出所有資料之SQL指令
-
-    SELECT * FROM `會員資料`
-    """
-    return "SELECT * FROM `" + str(listFrom) + "`"
-
-def deleteCommand(listFrom: str, key: str, value: str) -> str:
-    """
-    根據輸入所之資料表，產生刪除對應資料之SQL指令
-
-    DELETE FROM `會員資料` WHERE '姓名' = '王小明'
-    """
-    return f"DELETE FROM `{str(listFrom)}` WHERE `{key}` = '{value}'"
-
-def insertCommand(listFrom: str, key: tuple, value: tuple) -> str:
-    """
-    產生加入新資料之SQL指令
-
-    INSERT INTO `會員資料` (`姓名`, `身分證字號`, `生日`, `電話`, `餐食`, `特殊需求`, `暱稱`, `旅遊天數`) VALUES ([value-1],[value-2],[value-3],[value-4],[value-5],[value-6],[value-7],[value-8])
-    """
-    singleQuote = "\'"
-    backQuote = "`"
-    return f"INSERT INTO `{str(listFrom)}` {str(key).replace(singleQuote, backQuote)} VALUES {str(value)}"
-
-def editCommand(listFrom: str, key_toUpdate: list, value_toUpdate: list, searchBy_key: list, searchBy_value: list) -> str:
-    """
-    UPDATE `旅遊金序號` SET `是否使用過`=0 WHERE `序號` = '120288878ZJtKV';
-    """
-    return "UPDATE `" + str(listFrom) + "` SET `" + str(key_toUpdate) + "`='" + str(value_toUpdate) + "' WHERE `" + str(searchBy_key) + "` = '" + str(searchBy_value) + "'"
 
 def registeForm_processing():
     # <---------- departMode selecting start ---------->
@@ -482,91 +431,6 @@ def registeForm_processing():
     finally:
         input("[*]請按任意鍵回到 粉鳥旅行社會員資料庫管理系統-功能選擇介面...")
 
-def xlsx_DataFrame(clientList: list, mode: str) -> DataFrame:
-    """
-    MODE:
-     - including_roomType
-     - excluding_roomType
-    """
-    if mode == "including_roomType":
-        return pd.DataFrame(
-            {
-                "姓名": [client.name for client in clientList],
-                "身分證字號": [client.id for client in clientList],
-                "生日": [client.birthday for client in clientList],
-                "年齡": [client.yearsOld for client in clientList],
-                "電話": [client.phone for client in clientList],
-                "上車點": [client.location for client in clientList],
-                "餐食": [client.foodType for client in clientList],
-                "特殊需求": [client.specialNeeds for client in clientList],
-                "房型": [client.roomType for client in clientList],
-                "同房者": [client.roommate for client in clientList],
-                "團費": [client.cost for client in clientList],
-                "折扣碼": [client.discountUsed for client in clientList],
-                "社群暱稱": [client.nickName for client in clientList],
-                "警告訊息": [client.alertMsg for client in clientList]
-            }
-        )
-    elif mode == "excluding_roomType":
-        return pd.DataFrame(
-            {
-                "姓名": [client.name for client in clientList],
-                "身分證字號": [client.id for client in clientList],
-                "生日": [client.birthday for client in clientList],
-                "年齡": [client.yearsOld for client in clientList],
-                "電話": [client.phone for client in clientList],
-                "上車點": [client.location for client in clientList],
-                "餐食": [client.foodType for client in clientList],
-                "特殊需求": [client.specialNeeds for client in clientList],
-                "團費": [client.cost for client in clientList],
-                "折扣碼": [client.discountUsed for client in clientList],
-                "社群暱稱": [client.nickName for client in clientList],
-                "警告訊息": [client.alertMsg for client in clientList]
-            }
-        )
-    else:
-        print("[!]函數 xlsx_DataFrame 的參數 mode 錯誤")
-        os.system("pause")
-        raise BaseException
-
-def pinkbird_function(functionChoose, functionName):
-    """
-    功能清單
-    type functionChoose: str
-    """
-    clearConsole()
-    print("[*]===============================================")
-    print(f"[*]目前功能: {functionName}")
-    print("[*]===============================================")
-    method = functionDefined.get(functionChoose, default)
-
-    return method()
-
-def default():
-    print("請重新選擇功能")
-
-def exit_pinkbird_system():
-    try:
-        conn.close()
-    except NameError:
-        # 尚未成功連線就結束程式的狀況
-        pass
-    print(f"[!]程式結束...  本次執行時間: {datetime.datetime.now()-loginTime}")
-    raise Endding
-
-def set_cost():
-    cost_3 = int(input('[?]3歲以下報價: '))
-    cost4to6 = int(input('[?]4~6歲報價: '))
-    cost7to12 = int(input('[?]7~12歲報價: '))
-    cost13to64 = int(input('[?]13~64歲報價: '))
-    cost65 = int(input('[?]65歲以上報價: '))
-    # cost_3 = 0
-    # cost4to6 = 500
-    # cost7to12 = 1000
-    # cost13to64 = 1500
-    # cost65 = 1000
-    return [cost_3, cost4to6, cost7to12, cost13to64, cost65]
-
 def generate_discountCode(codeAmount, randomAmount, codeValue, prefix, clientName, deadline):
     codeGenerator = {}
     for _ in range(codeAmount):
@@ -612,13 +476,31 @@ def generate_discountCode(codeAmount, randomAmount, codeValue, prefix, clientNam
     )
     code.close()
 
-def clearConsole() -> None:
-    command = "clear"
-    if os.name in ("nt", "dos"):  # If Machine is running on Windows, use cls
-        command = "cls"
-    os.system(command)
+def pinkbird_function(functionChoose, functionName):
+    """
+    功能清單
+    type functionChoose: str
+    """
+    clearConsole()
+    if functionName != "結束系統":
+        print("[*]===============================================")
+        print(f"[*]目前功能: {functionName}")
+        print("[*]在各功能介面中，隨時可以按下「Ctrl + C」回到主選單介面")
+    method = functionDefined.get(functionChoose, default)
+
+    return method()
+
+def exit_pinkbird_system():
+    try:
+        conn.close()
+    except NameError:
+        # 尚未成功連線就結束程式的狀況
+        pass
+    print(f"[!]程式結束...  本次執行時間: {datetime.datetime.now()-loginTime}")
+    raise Endding
 
 def discountCode():
+    print("[*]===============================================")
     print('[*]序號產生器說明:')
     print('[*]由序號擁有人之身分證字號數字9碼 + 五位亂數 -> 組合而成')
     print('[*]================模式選擇=================')
@@ -706,8 +588,44 @@ def discountCode():
     )
     # <----- Write Operation Log end ----->
 
+def discountCode_Manager():
+    print('[*]            旅遊金序號管理器')
+    print('[*]         ↓請先選擇要執行的動作↓')
+    print('[*]================模式選擇=================')
+    print('[*]          1. 產生旅遊金序號')
+    print('[*]          2. 銷毀旅遊金序號')
+    print('[*]========================================')
+    mode = input("[?]請選擇要執行的功能(輸入編號): ")
+    
+    while True:
+        if mode in {"1", "2"}:
+            break
+        else:
+            print("[!]請輸入正確的模式編號!")
+    clearConsole()
+    
+    if mode == "1":
+        discountCode()
+        return
+
+    print("[*]旅遊金序號銷毀作業")
+    codeToScrapped = input("[?]請輸入要銷毀之序號: ")
+    scrapper = conn.cursor()
+    scrapper.execute(
+        searchCommand(
+            listFrom="旅遊金序號",
+            key="序號",
+            searchBy=codeToScrapped
+        )
+    )
+    response = scrapper.fetchall()
+    if len(response) >= 1:
+        # TODO: 未來可增加功能
+        print("[!]此序號於資料中有重複")
+
 def editClientProfile():
     editor = conn.cursor()
+    print("[*]===============================================")
     clientID = input("[?]請輸入要更新資料的會員的身分證字號: ")
     editor.execute(
         searchCommand(
@@ -829,6 +747,7 @@ def editClientProfile():
 
 def addClientProfile():
     addClient = Client()
+    print("[*]===============================================")
     addClient.name = input("[?]請輸入 客戶姓名: ")
     addClient.id = input("[?]請輸入 身分證字號: ")
     addClient.birthday = input("[?]請輸入 出生年月日: ")
@@ -888,6 +807,7 @@ def addClientProfile():
     # <----- Write Operation Log end ----->
 
 def dataRepeatCheck():
+    print("[*]===============================================")
     repeateID_Dict = {}
     selectedList = []
     repeateChecker = conn.cursor()
@@ -1007,6 +927,12 @@ def dataRepeatCheck():
     )
     # <----- Write Operation Log end ----->
 
+def open_phpMyAdmin():
+    print("[*]===============================================")
+    phpMyAdmin_link = "http://" + db_settings['host'] + "/phpMyAdmin"
+    webbrowser.open_new(phpMyAdmin_link)
+    print("[*]已於預設瀏覽器中開啟: 網頁版管理介面(phpMyAdmin)")
+    print("[*]===============================================")
 
 functionDefined = {
     "1": registeForm_processing,
@@ -1014,6 +940,7 @@ functionDefined = {
     "3": editClientProfile,
     "4": addClientProfile,
     "5": dataRepeatCheck,
+    "6": open_phpMyAdmin,
     "E": exit_pinkbird_system,
     "e": exit_pinkbird_system
 }
@@ -1101,10 +1028,11 @@ if __name__ == '__main__':
         print(f'[*]登入時間為: {loginTime.strftime("%Y-%m-%d_%H:%M:%S")}')
         print("[*]" + "================功能選項================")   
         print("[*]" + "\t  1. 產生出團名冊")
-        print("[*]" + "\t  2. 產生折扣碼") 
+        print("[*]" + "\t  2. 旅遊金序號管理") 
         print("[*]" + "\t  3. 會員資料(可查詢、編輯或刪除)") 
         print("[*]" + "\t  4. 手動新增會員資料")
         print("[*]" + "\t  5. 檢查會員資料是否重複")
+        print("[*]" + "\t  6. 開啟網頁版管理介面")
         print("[*]" + "\t  e. 離開系統")
         print("[*]" + "="*40)
         print("[*]在各功能介面中，隨時可以按下「Ctrl + C」回到此主選單介面")
@@ -1130,13 +1058,15 @@ if __name__ == '__main__':
             if functionChoose == "1":
                 operationName_inChinese = "產生出團名冊"
             elif functionChoose == "2":
-                operationName_inChinese = "產生折扣碼"
+                operationName_inChinese = "旅遊金序號管理"
             elif functionChoose == "3":
                 operationName_inChinese = "會員資料(可查詢、編輯或刪除)"
             elif functionChoose == "4":
                 operationName_inChinese = "手動新增會員資料"
             elif functionChoose == "5":
                 operationName_inChinese = "檢查會員資料是否重複"
+            elif functionChoose == "6":
+                operationName_inChinese = "開啟網頁版管理介面"
             elif functionChoose in ('e', 'E'):
                 operationName_inChinese = "結束系統"
             
@@ -1154,8 +1084,13 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             print("\n[*]系統將回到主選單")
         finally:
-            os.system("pause")
-
+            try:
+                if operationName_inChinese != "結束系統":
+                    input("[*]請按「Enter鍵」以繼續...")
+                else:
+                    input("[*]請按「Enter鍵」來結束程式...")
+            except KeyboardInterrupt:
+                pass
             # 結束每階段任務後清除 Console
             clearConsole()
     # <----- Main Loop end ----->
