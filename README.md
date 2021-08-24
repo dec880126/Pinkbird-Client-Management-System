@@ -13,6 +13,7 @@
     * [Config配置](#config)
     * [Database配置](#database)
     * [登入帳號權限](#user)
+    * [登入與操作紀錄](#log)
 * [版權聲明](#copyright)
 
 ## <a id="function">功能</a>
@@ -91,6 +92,9 @@
 MySQL 的 Server 端對於登入帳號的權限設定也請留意<br>
 確保連線的IP的連線允許，如有防火牆也請將連線IP寫入防火牆規則
 
+ - <a id="log">登入與操作紀錄</a>
+
+任何登入與操作的紀錄將會以.ini的格式記錄下來，保存於與程式同目錄底下的 "登入紀錄" 與 "操作紀錄" 資料夾
 ## <a id="copyright">版權聲明</a>
 
 **Copyright © 2021 粉鳥旅行社 版權所有**
