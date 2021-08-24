@@ -32,7 +32,7 @@
 
  - 主選單畫面介面
 
-此處可選擇進入各項梓功能介面中，進入功能介面後也可透過鍵盤操作 `Ctrl+C` 來回到此介面。
+此處可選擇進入各項功能介面中，進入功能介面後也可透過鍵盤操作 `Ctrl+C` 來回到此介面。
 
 <img src = 'https://user-images.githubusercontent.com/34447298/130611391-2692c5d2-f6d0-4e42-8ecb-f043633fbddf.png' height=75% width=75%></img>
 
