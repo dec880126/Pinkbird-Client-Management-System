@@ -1,11 +1,11 @@
 """
-PINKBIRD CLIENT MANAGEMENT SYSTEM
+PINKBIRD CLIENT DATABASE SYSTEM
 
 Copyright (c) 2021 CyuanHuang
 
 FUNCTION LIST:
  - Departure clients' infomation list generator
- - Discount code Manager
+ - Discount code generator
  - Clients' profiler editor
  - Add NEW Clients' profile
  - Check if the data is duplicated in the database
@@ -28,7 +28,7 @@ import package.config as config
 from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.1.0"
+programVersion = "版本: " + "5.1.1"
 
 class Client:
     """
@@ -118,6 +118,8 @@ def registeForm_processing():
         else:
             print("[!]請重新輸入正確的選項....")
             os.system("pause")
+    mode_inChinese = "「不」包含房型選項" if departMode == 1 else "包含房型選項"
+    print(f"[*]目前模式: {departMode}. {mode_inChinese}")
     # <---------- departMode selecting end ---------->
 
     # <---------- reading xlsx start ---------->
@@ -167,6 +169,8 @@ def registeForm_processing():
             break
         except IndexError:
             print("[!]日期輸入格式錯誤，請重新輸入，並確認格式為: YYYY.MM.DD")
+        except ValueError:
+            print("[!]日期輸入格式錯誤，請重新輸入，並確認格式為: YYYY.MM.DD")
 
     while True:
         try:
@@ -192,7 +196,13 @@ def registeForm_processing():
             attendClient_Dict[IDhere].location = df.at[idx, df.columns[2]]
             attendClient_Dict[IDhere].roomType = None
             attendClient_Dict[IDhere].roommate = None
-            attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[5]])
+            try:
+                attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[5]])
+                continue
+            except IndexError:
+                pass
+            print("[!]可能是出團表單中包含房型選項，請重新選擇出團模式")
+            raise KeyboardInterrupt
     elif departMode == 2:
         for idx in range(df.shape[0]):
             IDhere = df.at[idx, df.columns[0]]
@@ -269,90 +279,97 @@ def registeForm_processing():
                 raise WrongDepartTypeChoose
 
             if client.discountCode not in ("NaN", "nan"):  # 表單有填序號才執行序號有效性判斷
-                # <---------- deadline check start ---------->
-                deadlineChecker = conn.cursor()
-                deadlineChecker.execute(
-                    searchCommand(
-                        listFrom="旅遊金序號", key="序號", searchBy=client.discountCode
-                    )
-                )
-                codeDeadline = deadlineChecker.fetchall()[0][6].split(
-                    "."
-                )  # codeDeadline = [YYYY, MM, DD]
-                departDayL = str(departDay).split("-")
-
-                if int(departDayL[0]) > int(codeDeadline[0]):
-                    codeExpired = True
-                elif int(departDayL[1]) > int(codeDeadline[1]):
-                    codeExpired = True
-                elif int(departDayL[2]) > int(codeDeadline[2]):
-                    codeExpired = True
-
-                # <---------- deadline check end ---------->
-                if not codeExpired:
-                    cursor.execute(
+                try:
+                    code_exist = True
+                    # <---------- deadline check start ---------->
+                    deadlineChecker = conn.cursor()
+                    deadlineChecker.execute(
                         searchCommand(
                             listFrom="旅遊金序號", key="序號", searchBy=client.discountCode
                         )
                     )
+                    codeDeadline = deadlineChecker.fetchall()[0][6].split(
+                        "."
+                    )  # codeDeadline = [YYYY, MM, DD]
+                    departDayL = str(departDay).split("-")
 
-                    codeResult = cursor.fetchall()[0]
-                    # """"""""""""""""""""""""""""""""""""""""""""""""""""""
-                    #                       codeResult
-                    # 序號    金額    是否使用過    使用者    使用日期    操作者    使用期限    擁有者    產生日期
-                    # """"""""""""""""""""""""""""""""""""""""""""""""""""""
-                    code_valid = True if codeResult[2] == 0 else False
-                    code_discount = int(codeResult[1]) if code_valid else 0
+                    if int(departDayL[0]) > int(codeDeadline[0]):
+                        codeExpired = True
+                    elif int(departDayL[1]) > int(codeDeadline[1]):
+                        codeExpired = True
+                    elif int(departDayL[2]) > int(codeDeadline[2]):
+                        codeExpired = True
 
-                    if code_valid:
-                        codeHasBeenUsed = False
-                        originalCost = cost
-                        cost -= code_discount
-                        client.cost = cost
-                        print(
-                            f"[!]{item[0]} 兌換了 {code_discount} 元的優惠券!     詳細資訊: {originalCost}元 -> {client.cost}元"
-                        )
-
-                        # 序號在有效期限內才執行兌換程序
+                    # <---------- deadline check end ---------->
+                    if not codeExpired:
                         cursor.execute(
-                            # 將序號設定為: 已使用
-                            editCommand(
-                                listFrom="旅遊金序號",
-                                searchBy_key="序號",
-                                searchBy_value=client.discountCode,
-                                key_toUpdate="是否使用過",
-                                value_toUpdate=1,
+                            searchCommand(
+                                listFrom="旅遊金序號", key="序號", searchBy=client.discountCode
                             )
                         )
-                        conn.commit()
-                        cursor.execute(
-                            editCommand(
-                                # 更新序號使用者資訊
-                                listFrom="旅遊金序號",
-                                searchBy_key="序號",
-                                searchBy_value=client.discountCode,
-                                key_toUpdate="使用者",
-                                value_toUpdate=item[0],  # 使用者姓名
+
+                        codeResult = cursor.fetchall()[0]
+                        # """"""""""""""""""""""""""""""""""""""""""""""""""""""
+                        #                       codeResult
+                        # 序號    金額    是否使用過    使用者    使用日期    操作者    使用期限    擁有者    產生日期
+                        # """"""""""""""""""""""""""""""""""""""""""""""""""""""
+                        code_valid = True if codeResult[2] == 0 else False
+                        code_discount = int(codeResult[1]) if code_valid else 0
+
+                        if code_valid:
+                            codeHasBeenUsed = False
+                            originalCost = cost
+                            cost -= code_discount
+                            client.cost = cost
+                            print(
+                                f"[!]{item[0]} 兌換了 {code_discount} 元的優惠券!     詳細資訊: {originalCost}元 -> {client.cost}元"
                             )
-                        )
-                        conn.commit()
-                        cursor.execute(
-                            editCommand(
-                                # 更新序號使用日期
-                                listFrom="旅遊金序號",
-                                searchBy_key="序號",
-                                searchBy_value=client.discountCode,
-                                key_toUpdate="使用日期",
-                                value_toUpdate=str(departDay),
+
+                            # 序號在有效期限內才執行兌換程序
+                            cursor.execute(
+                                # 將序號設定為: 已使用
+                                editCommand(
+                                    listFrom="旅遊金序號",
+                                    searchBy_key="序號",
+                                    searchBy_value=client.discountCode,
+                                    key_toUpdate="是否使用過",
+                                    value_toUpdate=1,
+                                )
                             )
-                        )
-                        conn.commit()
+                            conn.commit()
+                            cursor.execute(
+                                editCommand(
+                                    # 更新序號使用者資訊
+                                    listFrom="旅遊金序號",
+                                    searchBy_key="序號",
+                                    searchBy_value=client.discountCode,
+                                    key_toUpdate="使用者",
+                                    value_toUpdate=item[0],  # 使用者姓名
+                                )
+                            )
+                            conn.commit()
+                            cursor.execute(
+                                editCommand(
+                                    # 更新序號使用日期
+                                    listFrom="旅遊金序號",
+                                    searchBy_key="序號",
+                                    searchBy_value=client.discountCode,
+                                    key_toUpdate="使用日期",
+                                    value_toUpdate=str(departDay),
+                                )
+                            )
+                            conn.commit()
+                        else:
+                            warningFlag = True
+                            codeHasBeenUsed = True
                     else:
                         warningFlag = True
-                        codeHasBeenUsed = True
-                else:
+                        code_valid = False
+                except IndexError:
+                    print(f"[!]{client.name} 的序號 {client.discountCode} 於資料庫中查無資料，詳細資訊可至資料庫中查詢。")
                     warningFlag = True
                     code_valid = False
+                    code_exist = False
             else:
                 code_valid = False
             # <---------- code checker end ---------->
@@ -387,6 +404,8 @@ def registeForm_processing():
                     client.alertMsg += "序號已被使用過 "
                 if codeExpired:
                     client.alertMsg += f'序號已於 {".".join(codeDeadline)} 過期 '
+                if not code_exist:
+                    client.alertMsg += f'序號: {client.discountCode} 不存在 '
 
         # <---------- Making xlsx start ---------->
         if departMode == 1:
