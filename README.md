@@ -5,6 +5,17 @@
 
 透過 Python 以及 MySQL 設計之企業客戶資料庫管理系統
 
+## 操作介面
+
+<img src = 'https://user-images.githubusercontent.com/34447298/130611339-8991e82a-6ab1-429a-9f80-590732d6a8d4.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611391-2692c5d2-f6d0-4e42-8ecb-f043633fbddf.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611415-02a9a237-3c26-4a87-be9f-5b4ea4b2b3f0.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611438-1d233a46-b681-4873-8ade-598046812a94.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611455-d25193ad-bd46-49e8-a1a6-2f340fb075e6.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611476-bb5c675f-443b-4b97-aa39-63ae8a871223.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611492-763a4070-207e-4a7f-8ea7-fff51e8f7d5d.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611799-7c67cd9b-85b6-4282-b48f-47cf66e6ca68.png' height=45% width=45%></img>
+
 ## 功能
 
  - 產生出團名冊
