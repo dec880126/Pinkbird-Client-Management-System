@@ -18,49 +18,49 @@
 
 於此處輸入MySQL Server之具存取權限之使用者資訊。 (詳細的登入資訊請參照: [Config配置](#config))
 
-<img src = 'https://user-images.githubusercontent.com/34447298/130611339-8991e82a-6ab1-429a-9f80-590732d6a8d4.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611339-8991e82a-6ab1-429a-9f80-590732d6a8d4.png' height=75% width=75%></img>
 
  - 主選單畫面介面
 
 此處可選擇進入各項梓功能介面中，進入功能介面後也可透過鍵盤操作 `Ctrl+C` 來回到此介面。
 
-<img src = 'https://user-images.githubusercontent.com/34447298/130611391-2692c5d2-f6d0-4e42-8ecb-f043633fbddf.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611391-2692c5d2-f6d0-4e42-8ecb-f043633fbddf.png' height=75% width=75%></img>
 
  - 產生出團名冊
 
 此為客製化功能，可進入介面並選擇指定模式後，輸入報名格式的 .XLSX 檔後，系統將會自動向SQL Server請求會員詳細資料，並分析處理後回傳，並輸出一份清晰的Excel檔。
 
-<img src = 'https://user-images.githubusercontent.com/34447298/130611415-02a9a237-3c26-4a87-be9f-5b4ea4b2b3f0.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611415-02a9a237-3c26-4a87-be9f-5b4ea4b2b3f0.png' height=75% width=75%></img>
 
  - 折扣碼管理
 
 提供兩種模式的折扣碼產生功能，以及後續的折扣碼管理功能。
 
-<img src = 'https://user-images.githubusercontent.com/34447298/130611438-1d233a46-b681-4873-8ade-598046812a94.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611438-1d233a46-b681-4873-8ade-598046812a94.png' height=75% width=75%></img>
 
  - 編輯使用者資料
 
 將複雜的 SQL 指令設計成簡單的中文化使用者介面，可輕鬆操作 MySQL 系統
 
-<img src = 'https://user-images.githubusercontent.com/34447298/130611455-d25193ad-bd46-49e8-a1a6-2f340fb075e6.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611455-d25193ad-bd46-49e8-a1a6-2f340fb075e6.png' height=75% width=75%></img>
 
  - 新增使用者資料
 
 如有新增單筆使用者資料需求，可使用此功能來達到快速且方便的新增資料功能。但是若有大量資料需要匯入，建議使用功能: 6，連入phpMyAdmin介面，選取對應Database後，尋找畫面上方的中間偏右的位置，有一項「匯入」，可一次匯入大量資料，也有支援許多格式(csv, sql...等)的匯入操作。
 
-<img src = 'https://user-images.githubusercontent.com/34447298/130611476-bb5c675f-443b-4b97-aa39-63ae8a871223.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611476-bb5c675f-443b-4b97-aa39-63ae8a871223.png' height=75% width=75%></img>
 
  - 檢查資料庫重複度
 
 此功能可快速檢查資料庫內是否有重複的資料存在，判斷的依據為身分證字號重複。若有存在重複項，可選取要保留的版本，最後再進行資料庫更新。
 
-<img src = 'https://user-images.githubusercontent.com/34447298/130611492-763a4070-207e-4a7f-8ea7-fff51e8f7d5d.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611492-763a4070-207e-4a7f-8ea7-fff51e8f7d5d.png' height=75% width=75%></img>
 
  - 開啟網頁版操作介面
 
 選擇後系統將裕預設瀏覽器中開啟phpMyAdmin的網頁版介面。
 
-<img src = 'https://user-images.githubusercontent.com/34447298/130611799-7c67cd9b-85b6-4282-b48f-47cf66e6ca68.png' height=45% width=45%></img>
+<img src = 'https://user-images.githubusercontent.com/34447298/130611799-7c67cd9b-85b6-4282-b48f-47cf66e6ca68.png' height=75% width=75%></img>
 
 ## 常見問題
 
