@@ -5,7 +5,17 @@
 
 透過 Python 以及 MySQL 設計之企業客戶資料庫管理系統
 
-## 功能
+## 目錄
+
+* [功能](#function)
+* [操作介面](#interface)
+* [常見問題](#problems)
+    * [Config配置](#config)
+    * [Database配置](#database)
+    * [登入帳號權限](#user)
+* [版權聲明](#copyright)
+
+## <a id="function">功能</a>
 
  - 產生出團名冊
  - 產生折扣碼
@@ -13,7 +23,7 @@
  - 手動新增會員資料
  - 檢查會員資料是否重複
 
-## 操作介面
+## <a id="interface">操作介面</a>
  - 登入畫面
 
 於此處輸入MySQL Server之具存取權限之使用者資訊。 (詳細的登入資訊請參照: [Config配置](#config))
@@ -63,7 +73,7 @@
 
 <img src = 'https://user-images.githubusercontent.com/34447298/130611799-7c67cd9b-85b6-4282-b48f-47cf66e6ca68.png' height=75% width=75%></img>
 
-## 常見問題
+## <a id="problems">常見問題</a>
 
  - <a id = "config" >Config配置</a>
  
@@ -71,16 +81,16 @@
 需先至運行目錄下配置Config.ini相關內容才能運行<br>
 詳細說明於config.ini中有說明
  
- - Database配置
+ - <a id="database">Database配置</a>
 
 請先確認 MySQL 的 Server 端有啟動TCP/IP連線<br>
 並請確認 PORT 沒有問題
 
- - 登入帳號權限
+ - <a id="user">登入帳號權限</a>
 
 MySQL 的 Server 端對於登入帳號的權限設定也請留意<br>
 確保連線的IP的連線允許，如有防火牆也請將連線IP寫入防火牆規則
 
-## 版權聲明
+## <a id="copyright">版權聲明</a>
 
 **Copyright © 2021 粉鳥旅行社 版權所有**
