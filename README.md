@@ -80,7 +80,7 @@
  
 第一次運行時系統會自動建立config.ini<br>
 需先至運行目錄下配置Config.ini相關內容才能運行<br>
-> host 為資料庫所在位置
+> host 為資料庫所在位置<br>
 > port 為資料庫所對應之 IP 的連接埠
  
  - <a id="database">Database配置</a>
