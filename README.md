@@ -41,7 +41,7 @@
 
  - 產生出團名冊
 
-此為客製化功能，可進入介面並選擇指定模式後，輸入報名格式的 .XLSX 檔後，系統將會自動向SQL Server請求會員詳細資料，並分析處理後回傳，並輸出一份清晰的Excel檔。
+可進入介面並選擇指定模式後，輸入報名格式的 .XLSX 檔後，系統將會自動向SQL Server請求會員詳細資料，並分析處理後回傳，並輸出一份清晰的Excel檔。
 
 <img src = 'https://user-images.githubusercontent.com/34447298/130611415-02a9a237-3c26-4a87-be9f-5b4ea4b2b3f0.png' height=75% width=75%></img>
 
