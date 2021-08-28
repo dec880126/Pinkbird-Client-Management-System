@@ -5,8 +5,11 @@
 
 透過 Python 以及 MySQL 設計之企業客戶資料庫管理系統
 
-<a href = "https://github.com/dec880126/Pinkbird-Client-Management-System/blob/main/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/dec880126/Pinkbird-Client-Management-System?style=plastic"></a>
-<a href = "https://github.com/dec880126/Pinkbird-Client-Management-System/releases/tag/5.1.2"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/downloads/dec880126/Pinkbird-Client-Management-System/latest/total?style=plastic"></a>
+
+
+   <a href = "https://github.com/dec880126/Pinkbird-Client-Management-System/blob/main/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/dec880126/Pinkbird-Client-Management-System?style=plastic"></a>
+   <a href = "https://github.com/dec880126/Pinkbird-Client-Management-System/releases/tag/5.1.2"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/downloads/dec880126/Pinkbird-Client-Management-System/latest/total?style=plastic"></a>
+
 ## 目錄
 
 * [功能](#function)
