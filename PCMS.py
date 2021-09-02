@@ -1244,7 +1244,9 @@ def discountCode_overview():
         avg_value = cur.fetchone()[0]
         cur.execute("SELECT SUM(`金額`) FROM `旅遊金序號` WHERE `是否使用過` = '1'")
         used_value = cur.fetchone()[0]
-        
+
+    # 2021.09.02 fixed
+    # TypeError: int() argument must be a string, a bytes-like object or a number, not 'NoneType'
     if used_value == None:
         used_value = 0
 
