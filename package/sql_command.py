@@ -1,5 +1,5 @@
 """
-FUNCTION LIVRARY OF SQL COMMAND
+FUNCTION LIBRARY OF SQL COMMAND
  - searchCommand
  - searchCommand_sp
  - listAllCommand
