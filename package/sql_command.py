@@ -49,6 +49,33 @@ def insertCommand(listFrom: str, key: tuple, value: tuple) -> str:
 
 def editCommand(listFrom: str, key_toUpdate: list, value_toUpdate: list, searchBy_key: list, searchBy_value: list) -> str:
     """
-    UPDATE `旅遊金序號` SET `是否使用過`=0 WHERE `序號` = '120288878ZJtKV';
+    editCommand("資料表", "欲設定之欄位", "欲設定之值", "搜尋條件", "搜尋值")
+     - UPDATE `資料表` SET `欲設定之欄位`= '欲設定之值' WHERE `搜尋條件` = '搜尋值';
     """
     return "UPDATE `" + str(listFrom) + "` SET `" + str(key_toUpdate) + "`='" + str(value_toUpdate) + "' WHERE `" + str(searchBy_key) + "` = '" + str(searchBy_value) + "'"
+
+def countCommand(listfrom: str, column: str = None, value: str = None) -> str:
+    """
+    countCommand("資料表")
+     - SELECT COUNT(*) FROM `資料表` WHERE 1
+
+    countCommand("資料表", "欄位", "值")
+     - SELECT COUNT(*) FROM `資料表` WHERE `欄位` = '值'
+    """
+    if column == None and value == None:
+        return f"SELECT COUNT(*) FROM `{listfrom}` WHERE 1"
+
+    return f"SELECT COUNT(*) FROM `{listfrom}` WHERE `{column}` = '{str(value)}'"
+
+def searchCommand_sp(listfrom: str, column: str = None, condition_col: str = None, condition_value: str = None) -> str:
+    """
+    searchCommand_sp("資料表", "欄位")
+     - SELECT `欄位` FROM `資料表` WHERE 1
+
+    searchCommand_sp("資料表", "欄位", "條件欄位", "條件值")
+     - SELECT `欄位` FROM `資料表` WHERE `條件欄位` = '條件值'
+    """
+    if condition_col == None and condition_value == None:
+        return f"SELECT `{column}` FROM `{listfrom}` WHERE 1"
+
+    return f"SELECT `{column}` FROM `{listfrom}` WHERE `{condition_col}` = '{str(condition_value)}'"
