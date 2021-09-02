@@ -1,3 +1,13 @@
+"""
+FUNCTION LIVRARY OF SQL COMMAND
+ - searchCommand
+ - searchCommand_sp
+ - listAllCommand
+ - deleteCommand
+ - insertCommand
+ - editCommand
+ - countCommand
+"""
 def searchCommand(listFrom: str, key: str, searchBy) -> str:
     """
     根據輸入列表，產生搜尋的SQL指令
