@@ -9,7 +9,8 @@ FUNCTION LIST:
  - Clients' profiler editor
  - Add NEW Clients' profile
  - Check if the data is duplicated in the database
-
+ - Open phpMyAdmin
+ - Database's overview and analysis
 ALL OF THE FUNCTION PROVIDED ARE WORKING BASE ON SQL(Structured Query Language)
 """
 # ? Modules
