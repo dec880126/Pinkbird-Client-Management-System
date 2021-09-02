@@ -6,10 +6,10 @@ Copyright (c) 2021 CyuanHuang
 FUNCTION LIST:
  - Departure clients' infomation list generator
  - Discount code generator
- - Clients' profiler editor
+ - Clients' profile editor
  - Add NEW Clients' profile
- - Check if the data is duplicated in the database
- - Open phpMyAdmin
+ - Check if the data has duplicated in the database
+ - Open phpMyAdmin in default web browser
  - Database's overview and analysis
 ALL OF THE FUNCTION PROVIDED ARE WORKING BASE ON SQL(Structured Query Language)
 """
