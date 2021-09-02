@@ -16,11 +16,13 @@ ALL OF THE FUNCTION PROVIDED ARE WORKING BASE ON SQL(Structured Query Language)
 import pandas as pd
 import pymysql
 import datetime
+from rich.progress import track
 import sys
 import os
 import string
 import secrets
 import webbrowser
+
 
 # ? Packages
 import package.year_cal as year_cal
@@ -28,30 +30,9 @@ import package.config as config
 from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.1.2"
+programVersion = "版本: " + "5.2.0"
 
 class Client:
-    """
-    default setting:
-
-     - self.name = "無"
-     - self.id = "無"
-     - self.birthday = "無"
-     - self.phone = "無"
-     - self.location = "無"
-     - self.foodType = "無"
-     - self.specialNeeds = "無"
-     - self.roomType = "無"
-     - self.roommate = "無"
-     - self.cost = "無"
-     - self.discountCode = "無"
-     - self.discountUsed = "無"
-     - self.nickName = "無"
-     - self.alertMsg = "無"
-     - self.yearsOld = "無"
-     - self.travelDays = 0
-    """
-
     def __init__(self) -> None:
         # , name, id, birthday, phone, location, foodType, specialNeeds, roomType, roommate, cost, discountCode, discountUsed, nickName, alertMsg
         self.name = "無"
@@ -70,7 +51,9 @@ class Client:
         self.alertMsg = "無"
         self.yearsOld = "無"
         self.travelDays = 0
-
+        # 2021.09.01 update
+        self.seat = "無"
+        self.disability = "無"
 
 class Code:
     def __init__(
@@ -83,20 +66,15 @@ class Code:
         self.generateBy = generateBy
         self.generateTime = generateTime
 
-
 class Endding(Exception):
     def __init__(self):
         sys.exit()
 
-
 class WrongDepartTypeChoose(Exception):
-    def __init__(self):
-        pass
+    pass
 
-
-class GetOutOfTryExcept(Exception):
-    def __init__(self):
-        pass
+class Illegal_discountCode(Exception):
+    pass
 
 
 def registeForm_processing():
@@ -126,17 +104,34 @@ def registeForm_processing():
     filePath = input("[?]請將檔案拉到程式畫面中...")
     try:
         if departMode == 1:
-            df = pd.read_excel(
-                filePath,
-                sheet_name="表單回應 1",
-                usecols="B:E",  # B:E順序為: "身分證字號", "連絡電話", "上車地點", "序號"
-            )
+            try:
+                # 2021.09.01 fixed
+                # ValueError: Worksheet named '表單回應 1' not found
+                df = pd.read_excel(
+                    filePath,
+                    sheet_name="表單回應 1",
+                    usecols="B:G",  # B:G順序為: "身分證字號", "連絡電話", "上車地點", "身心障礙手冊", "序號", "座位"
+                )
+            except ValueError:
+                df = pd.read_excel(
+                    filePath,
+                    sheet_name="Form Responses 1",
+                    usecols="B:G",  # B:G順序為: "身分證字號", "連絡電話", "上車地點", "身心障礙手冊", "序號", "座位"
+                )
         elif departMode == 2:
-            df = pd.read_excel(
-                filePath,
-                sheet_name="表單回應 1",
-                usecols="B:G",  # B:G順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "序號"
-            )
+            try:
+                df = pd.read_excel(
+                    filePath,
+                    sheet_name="表單回應 1",
+                    usecols="B:I",  # B:I順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "身心障礙手冊", "序號", "座位"
+                )
+            except ValueError:
+                df = pd.read_excel(
+                    filePath,
+                    sheet_name="Form Responses 1",
+                    usecols="B:I",  # B:I順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "身心障礙手冊", "序號", "座位"
+                )
+        # print(df)
     except OSError:
         clearConsole()
         print(
@@ -166,6 +161,9 @@ def registeForm_processing():
                 month=int(departDay_raw[1]),
                 day=int(departDay_raw[2]),
             )
+            if datetime.date.today() > departDay:
+                print("[!]提醒: 出團日期不能不能為過去!") # 2021.09.01 update
+                continue
             break
         except IndexError:
             print("[!]日期輸入格式錯誤，請重新輸入，並確認格式為: YYYY.MM.DD")
@@ -191,16 +189,22 @@ def registeForm_processing():
             IDhere = df.at[idx, df.columns[0]]
             attendClient_Dict[IDhere] = Client()
 
+            # 順序為: "身分證字號", "連絡電話", "上車地點", "身心障礙手冊", "序號", "座位"
             attendClient_Dict[IDhere].id = IDhere
             attendClient_Dict[IDhere].phone = df.at[idx, df.columns[1]]
             attendClient_Dict[IDhere].location = df.at[idx, df.columns[2]]
+            attendClient_Dict[IDhere].disability = str(df.at[idx, df.columns[3]])
+            attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[4]])            
+            attendClient_Dict[IDhere].seat = df.at[idx, df.columns[5]]
             attendClient_Dict[IDhere].roomType = None
             attendClient_Dict[IDhere].roommate = None
-            try:
-                attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[5]])
+            
+
+            # 測試讀取錯誤的狀況 如果出正常則continue，否則系統將顯示提醒訊息
+            # print(attendClient_Dict[IDhere].disability)
+            if "是" in attendClient_Dict[IDhere].disability or "否" in attendClient_Dict[IDhere].disability:
                 continue
-            except IndexError:
-                pass
+
             print("[!]可能是出團表單中包含房型選項，請重新選擇出團模式")
             raise KeyboardInterrupt
     elif departMode == 2:
@@ -208,12 +212,15 @@ def registeForm_processing():
             IDhere = df.at[idx, df.columns[0]]
             attendClient_Dict[IDhere] = Client()
 
-            attendClient_Dict[IDhere].id = df.at[idx, df.columns[0]]
+            # 順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "身心障礙手冊", "序號", "座位"
+            attendClient_Dict[IDhere].id = IDhere
             attendClient_Dict[IDhere].phone = df.at[idx, df.columns[1]]
             attendClient_Dict[IDhere].location = df.at[idx, df.columns[2]]
             attendClient_Dict[IDhere].roomType = df.at[idx, df.columns[3]]
             attendClient_Dict[IDhere].roommate = df.at[idx, df.columns[4]]
-            attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[5]])
+            attendClient_Dict[IDhere].disability = df.at[idx, df.columns[5]]
+            attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[6]])
+            attendClient_Dict[IDhere].seat = df.at[idx, df.columns[7]]
     # <---------- client class processing end ---------->
 
     try:
@@ -230,7 +237,7 @@ def registeForm_processing():
         print("[*]以下為查詢結果:")
         result = cursor.fetchall()
 
-        for idx, item in enumerate(result):
+        for step, item in zip(track(result, description="[\]處理中"), result):
             # <---------- client Processing start ---------->
             if departMode == 1:
                 IDhere = item[1]
@@ -284,21 +291,38 @@ def registeForm_processing():
                     # <---------- deadline check start ---------->
                     deadlineChecker = conn.cursor()
                     deadlineChecker.execute(
-                        searchCommand(
-                            listFrom="旅遊金序號", key="序號", searchBy=client.discountCode
-                        )
+                        f"SELECT `使用期限` FROM `旅遊金序號` WHERE `序號` = '{client.discountCode}'"
                     )
-                    codeDeadline = deadlineChecker.fetchall()[0][6].split(
-                        "."
-                    )  # codeDeadline = [YYYY, MM, DD]
-                    departDayL = str(departDay).split("-")
+                    codeDeadline = deadlineChecker.fetchone()
 
-                    if int(departDayL[0]) > int(codeDeadline[0]):
+                    #     File "Y:\python\PCMS\PCMS.py", line 302, in registeForm_processing
+                    #         if type(codeDeadline[0]) is None:
+                    # TypeError: 'NoneType' object is not subscriptable
+                    try:
+                        illegal = False
+                        codeDeadline = codeDeadline[0].split(".")  # codeDeadline = [YYYY, MM, DD]
+                    except TypeError:
+                        illegal = True
+
+                    if illegal:
+                        raise Illegal_discountCode
+                    # departDayL = str(departDay).split("-")
+
+                    codeDeadline = datetime.date(
+                        year=int(codeDeadline[0]),
+                        month=int(codeDeadline[1]),
+                        day=int(codeDeadline[2]),
+                    )
+
+                    if departDay > codeDeadline:
                         codeExpired = True
-                    elif int(departDayL[1]) > int(codeDeadline[1]):
-                        codeExpired = True
-                    elif int(departDayL[2]) > int(codeDeadline[2]):
-                        codeExpired = True
+
+                    # if int(departDayL[0]) > int(codeDeadline[0]):
+                    #     codeExpired = True
+                    # elif int(departDayL[1]) > int(codeDeadline[1]):
+                    #     codeExpired = True
+                    # elif int(departDayL[2]) > int(codeDeadline[2]):
+                    #     codeExpired = True
 
                     # <---------- deadline check end ---------->
                     if not codeExpired:
@@ -370,17 +394,23 @@ def registeForm_processing():
                     warningFlag = True
                     code_valid = False
                     code_exist = False
+                except Illegal_discountCode: 
+                    print(f"[!]{client.name} 的序號 {client.discountCode} 於資料庫中查無資料，詳細資訊可至資料庫中查詢。")
+                    warningFlag = True
+                    code_valid = False
+                    code_exist = False
             else:
                 code_valid = False
             # <---------- code checker end ---------->
 
             # <---------- total travel days start ---------->
             cursor.execute(
-                searchCommand(listFrom="會員資料", key="身分證字號", searchBy=item[1])
+                # 2021.09.01 update
+                f"SELECT `旅遊天數` FROM `會員資料` WHERE `身分證字號` = '{item[1]}'"
+                # searchCommand(listFrom="會員資料", key="身分證字號", searchBy=item[1])
             )
-            d = cursor.fetchall()[0][-1]
-            totalTravelDays_now = int(d)
-            totalTravelDays_updated = totalTravelDays_now + travelDays
+            d = cursor.fetchone()
+            totalTravelDays_updated = int(d[0]) + travelDays
             cursor.execute(
                 editCommand(
                     listFrom="會員資料",
@@ -416,7 +446,9 @@ def registeForm_processing():
             df = xlsx_DataFrame(
                 clientList=attendClient_Dict.values(), mode="including_roomType"
             )
+        print("======================================================================")
         print(df)
+        print("======================================================================")
 
         excelName = "出團清冊" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".xlsx"
         df.to_excel(excelName, sheet_name="出團清冊", index=False, na_rep="空值")
@@ -441,16 +473,10 @@ def registeForm_processing():
         config.write_config(path=operationConfigPath, content=operationLog)
         # <----- Write Operation Log end ----->
     except WrongDepartTypeChoose:
-        print(
-            "[*]==================================================================================================================================="
-        )
-        print(
-            "[!]警告: 可能在出團模式選擇處選擇錯誤，請確認輸入的Excel表格是否為有包含房型選項的格式，確認後請重新選擇出團模式為「報名表單包含房型選項」"
-        )
-        print(
-            "[*]==================================================================================================================================="
-        )
-    finally:
+        print("[*]===================================================================================================================================")
+        print("[!]警告: 可能在出團模式選擇處選擇錯誤，請確認輸入的Excel表格是否為有包含房型選項的格式，確認後請重新選擇出團模式為「報名表單包含房型選項」")
+        print("[*]===================================================================================================================================")
+    finally: 
         input("[*]請按任意鍵回到 粉鳥旅行社會員資料庫管理系統-功能選擇介面...")
 
 
@@ -731,7 +757,7 @@ def editClientProfile():
     editor.execute(searchCommand(listFrom="會員資料", key="身分證字號", searchBy=clientID))
     clientData = editor.fetchone()
     try:
-        preData = f"姓名: {clientData[0]}    身分證字號: {clientData[1]}    生日: {clientData[2]}   電話: {clientData[3]}   餐食: {clientData[4]}   特殊需求: {clientData[5]}   社群暱稱: {clientData[6]}"
+        preData = f"姓名: {clientData[0]}    身分證字號: {clientData[1]}    生日: {clientData[2]}   電話: {clientData[3]}   餐食: {clientData[4]}   特殊需求: {clientData[5]}   社群暱稱: {clientData[6]}   身心障礙: {clientData[8]}"
     except TypeError:
         print(f"[!]資料庫中無 身分證字號: {clientID} 對應之資料")
         return
@@ -744,7 +770,7 @@ def editClientProfile():
     )
     print("[*]如果只是要查詢會員資料請在確認完會員資料後輸入「e」即可")
     print(
-        "[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    delete: 刪除此筆會員資料    e: 不做任何操作"
+        "[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    8.身心障礙    delete: 刪除此筆會員資料    e: 不做任何操作"
     )
     editMode_Dict = {
         "1": "姓名",
@@ -754,6 +780,7 @@ def editClientProfile():
         "5": "餐食",
         "6": "特殊需求",
         "7": "暱稱",
+        "8": "身心障礙"
     }
 
     while True:
@@ -761,10 +788,10 @@ def editClientProfile():
         if editMode in ("e", "E"):
             print("[!]已取消編輯...")
             return 0
-        elif editMode in ("1", "2", "3", "4", "5", "6", "7", "delete"):
+        elif editMode in ("1", "2", "3", "4", "5", "6", "7", "8", "delete"):
             break
         else:
-            print('[!]請重新輸入 "編輯選項" 中的選項...')
+            print('[!]請重新輸入「編輯選項」中的選項...')
             continue
 
     if editMode == "delete":
@@ -781,7 +808,7 @@ def editClientProfile():
                 print(f"[!]已取消刪除 {clientID} 的會員資料")
                 return 0
     else:
-        newValue = input(f"[?]請問要將「{editMode_Dict[editMode]}」改為(請輸入數值)? ")
+        newValue = input(f"[?]請問要將「{editMode_Dict[editMode]}」改為(請輸入欲更新之資料內容)? ")
 
         editor.execute(
             editCommand(
@@ -802,7 +829,7 @@ def editClientProfile():
         print(
             "[*]======================================================更新後的資料======================================================="
         )
-        output = f"姓名: {clientDataNew[0]}    身分證字號: {clientDataNew[1]}    生日: {clientDataNew[2]}   電話: {clientDataNew[3]}   餐食: {clientDataNew[4]}   特殊需求: {clientDataNew[5]}   社群暱稱: {clientDataNew[6]}"
+        output = f"姓名: {clientDataNew[0]}    身分證字號: {clientDataNew[1]}    生日: {clientDataNew[2]}   電話: {clientDataNew[3]}   餐食: {clientDataNew[4]}   特殊需求: {clientDataNew[5]}   社群暱稱: {clientDataNew[6]}   身心障礙: {clientDataNew[8]}"
         print("[>]" + output)
         print(
             "[*]========================================================================================================================"
@@ -845,12 +872,13 @@ def addClientProfile():
     addClient.specialNeeds = input("[?]請輸入 特殊需求: ")
     addClient.nickName = input("[?]請輸入 社群暱稱: ")
     addClient.travelDays = 0  # 新進客戶預設為0
+    addClient.disability = input("[?]是否領有身心障礙手冊: ")
 
     editor = conn.cursor()
     editor.execute(
         insertCommand(
             listFrom="會員資料",
-            key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數"),
+            key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
             value=(
                 addClient.name,
                 addClient.id,
@@ -860,16 +888,21 @@ def addClientProfile():
                 addClient.specialNeeds,
                 addClient.nickName,
                 addClient.travelDays,
+                addClient.disability
             ),
         )
     )
     conn.commit()
     editor.execute(searchCommand(listFrom="會員資料", key="身分證字號", searchBy=addClient.id))
     newData = editor.fetchall()[0]
+    if len(editor.fetchall()) > 1:
+        print("[!]警告: 此會員資料於資料庫中有重複，請回到主選單選擇「功能5」來處理資料庫重複之問題")
+        return
+        
     print(
         "[*]======================================================新增客戶資料======================================================="
     )
-    printData = f"姓名: {newData[0]}    身分證字號: {newData[1]}    生日: {newData[2]}   電話: {newData[3]}   餐食: {newData[4]}   特殊需求: {newData[5]}   社群暱稱: {newData[6]}"
+    printData = f"姓名: {newData[0]}    身分證字號: {newData[1]}    生日: {newData[2]}   電話: {newData[3]}   餐食: {newData[4]}   特殊需求: {newData[5]}   社群暱稱: {newData[6]}   旅遊天數: {newData[7]}    身心障礙: {newData[8]}"
     print("[>]" + printData)
     print(
         "[*]========================================================================================================================"
@@ -927,8 +960,9 @@ def dataRepeatCheck():
                 repeateID_Dict[idx + 1].specialNeeds = searchResult[5]
                 repeateID_Dict[idx + 1].nickName = searchResult[6]
                 repeateID_Dict[idx + 1].travelDays = searchResult[7]
+                repeateID_Dict[idx + 1].disability = searchResult[8]
                 print(
-                    f"[>]{idx+1}. 姓名: {repeateID_Dict[idx+1].name}\t身分證字號: {repeateID_Dict[idx+1].id}\t生日: {repeateID_Dict[idx+1].birthday}\t電話: {repeateID_Dict[idx+1].phone}\t餐食: {repeateID_Dict[idx+1].foodType}\t特殊需求: {repeateID_Dict[idx+1].specialNeeds}\t暱稱: {repeateID_Dict[idx+1].nickName}\t旅遊天數: {repeateID_Dict[idx+1].travelDays}"
+                    f"[>]{idx+1}. 姓名: {repeateID_Dict[idx+1].name}\t身分證字號: {repeateID_Dict[idx+1].id}\t生日: {repeateID_Dict[idx+1].birthday}\t電話: {repeateID_Dict[idx+1].phone}\t餐食: {repeateID_Dict[idx+1].foodType}\t特殊需求: {repeateID_Dict[idx+1].specialNeeds}\t暱稱: {repeateID_Dict[idx+1].nickName}\t旅遊天數: {repeateID_Dict[idx+1].travelDays}\t身心障礙: {repeateID_Dict[idx+1].disability}"
                 )
             while True:
                 try:
@@ -941,7 +975,7 @@ def dataRepeatCheck():
             temp = repeateID_Dict[selectFromRepeat]
             selectedList.append(temp)
             print(
-                f"[*]\t保存的版本:\n[*]\t{selectFromRepeat}. 姓名: {temp.name}\t身分證字號: {temp.id}\t生日: {temp.birthday}\t電話: {temp.phone}\t餐食: {temp.foodType}\t特殊需求: {temp.specialNeeds}\t暱稱: {temp.nickName}\t旅遊天數: {temp.travelDays}"
+                f"[*]\t保存的版本:\n[*]\t{selectFromRepeat}. 姓名: {temp.name}\t身分證字號: {temp.id}\t生日: {temp.birthday}\t電話: {temp.phone}\t餐食: {temp.foodType}\t特殊需求: {temp.specialNeeds}\t暱稱: {temp.nickName}\t旅遊天數: {temp.travelDays}\t身心障礙: {temp.disability}"
             )
             print("[-]")
             input("[*]請按 Enter鍵 繼續選取...")
@@ -950,9 +984,9 @@ def dataRepeatCheck():
         print("[*]以下為最終選取的保留版本:")
         for selected in selectedList:
             print(
-                f"[*]姓名: {selected.name}\t身分證字號: {selected.id}\t生日: {selected.birthday}\t電話: {selected.phone}\t餐食: {selected.foodType}\t特殊需求: {selected.specialNeeds}\t暱稱: {selected.nickName}\t旅遊天數: {selected.travelDays}"
+                f"[*]姓名: {selected.name}\t身分證字號: {selected.id}\t生日: {selected.birthday}\t電話: {selected.phone}\t餐食: {selected.foodType}\t特殊需求: {selected.specialNeeds}\t暱稱: {selected.nickName}\t旅遊天數: {selected.travelDays}\t身心障礙: {selected.disability}"
             )
-        reChoose = input("[*]如果要重新選擇，請輸入「re」，如果確認要使用上述資料作為最新資料，直接按「Enter鍵」即可繼續")
+        reChoose = input("[*]如果要重新選擇，請輸入「re」，如果確認要使用上述資料作為最新資料，直接按「Enter鍵」繼續")
         if reChoose != "re":
             break
         selectedList = []
@@ -971,7 +1005,7 @@ def dataRepeatCheck():
             repeateChecker.execute(
                 insertCommand(
                     listFrom="會員資料",
-                    key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數"),
+                    key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
                     value=(
                         client.name,
                         client.id,
@@ -981,6 +1015,7 @@ def dataRepeatCheck():
                         client.specialNeeds,
                         client.nickName,
                         client.travelDays,
+                        client.disability
                     ),
                 )
             )
@@ -1122,7 +1157,7 @@ if __name__ == "__main__":
             if loginSuccess:
                 loginLog = f"{loginTime}\t{db_settings['user']}\t{'登入成功'}\n"
             else:
-                loginLog = f"{loginTime}\t{db_settings['user']}\t{'登入失敗'}\n"
+                loginLog = f"{loginTime}\t{db_settings['user']}\t第 {retryLoginCount+1} 次嘗試登入失敗\n"
 
             config.write_config(path=configPath, content=loginLog)
             # <----- Write Login Log end ----->
