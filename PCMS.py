@@ -27,10 +27,10 @@ import webbrowser
 # ? Packages
 import package.year_cal as year_cal
 import package.config as config
-from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand
+from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand, countCommand, searchCommand_sp
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.2.0"
+programVersion = "版本: " + "5.3.0"
 
 class Client:
     def __init__(self) -> None:
@@ -1076,6 +1076,186 @@ def exit_pinkbird_system():
     raise Endding
 
 
+def overview():
+    with conn.cursor() as cur:        
+        cur.execute(countCommand("會員資料"))
+        amount_of_clients = cur.fetchone()[0]
+    
+    while True:
+        clearConsole()
+        print(f"[*]========================================")
+        print("[*]" + f"資料庫 {db_settings['database']} 總覽".center(37))
+        print("[*]" + f"資料庫目前總人數為 {amount_of_clients} 人".center(32))
+        print(f"[*]========================================")
+        print("[*]目前支援分析的項目有:")
+        print("[*]    1. 旅遊天數排名")
+        print("[*]    2. 年齡層分布")
+        print("[*]    3. 餐食種類分布")
+        print("[*]    4. 身心障礙手冊總覽")
+        print("[*]    5. 旅遊金序號總覽")
+        print("[*]    e. 回到主選單")
+        print("[*]" + "="*40)
+        try:
+            typeChoose = input("[?}請選擇要查詢之項目: ")
+            if typeChoose in ("e", "E"):
+                return
+            typeChoose = int(typeChoose)
+        except TypeError:
+            print("[!]請勿輸入「數字」以外的數值!")
+            input("[*]請按鍵盤上的「Enter」鍵以繼續...")
+        except ValueError:
+            print("[!]請勿輸入「選項」以外的數值!")
+            input("[*]請按鍵盤上的「Enter」鍵以繼續...")
+
+        if typeChoose not in range(1, 6):
+            print("[!]請輸入正確的功能編號!")
+            continue
+
+        if typeChoose == 1:
+            travelsDay_ranking_overview()
+        elif typeChoose == 2:
+            ages_overview()
+        elif typeChoose == 3:
+            foodType_overview()
+        elif typeChoose == 4:
+            disability_overview()
+        elif typeChoose == 5:
+            discountCode_overview()
+        
+        input("[*]請按鍵盤上的「Enter」鍵以繼續...")
+    
+
+def foodType_overview():
+    with conn.cursor() as cur:
+        cur.execute(countCommand("會員資料"))
+        amount_of_clients = cur.fetchone()[0]
+        cur.execute(countCommand("會員資料", "餐食", "葷食"))
+        meatfood = cur.fetchone()[0]
+        cur.execute(countCommand("會員資料", "餐食", "素食"))
+        vegetarian = cur.fetchone()[0]
+    
+    print("[*]" + "="*40)
+    print(f"[*]餐食為「素食」者共有 {vegetarian} 人")
+    print(f"[*]餐食為「葷食」者共有 {meatfood} 人")
+    print("[*]" + "="*40)
+    print(f"[*]資料庫總人數為 {amount_of_clients} 人")
+
+
+def ages_overview():
+    age_0_3 = age_4_6 = age_7_12 = age_13_64 = age_65up = 0
+    total_age = 0
+
+    with conn.cursor() as cur:
+        cur.execute(countCommand("會員資料"))
+        amount_of_clients = cur.fetchone()[0]
+        cur.execute(searchCommand_sp("會員資料", "生日"))
+        births = cur.fetchall()
+        for birth in births:
+            age = year_cal.get_years_old(birth[0], datetime.date.today())
+            total_age += age
+
+            if age >= 0 and age <= 3:
+                age_0_3 += 1
+            elif age >= 4 and age <= 6:
+                age_4_6 += 1
+            elif age >= 7 and age <= 12:
+                age_7_12 += 1
+            elif age >= 13 and age <= 64:
+                age_13_64 += 1
+            elif age >= 65:
+                age_65up += 1
+        
+    print("[*]" + "="*40)
+    print(f"[*] 0  ~ 3   歲共有 {age_0_3} 人")
+    print(f"[*] 4  ~ 6   歲共有 {age_4_6} 人")
+    print(f"[*] 7  ~ 12  歲共有 {age_7_12} 人")
+    print(f"[*] 13 ~ 64  歲共有 {age_13_64} 人")
+    print(f"[*]   >= 65  歲共有 {age_65up} 人")
+    print("[*]" + "="*40)
+    print(f"[*]資料庫總人數為 {amount_of_clients} 人，平均 {total_age/amount_of_clients: 2.2f} 歲")
+
+
+def disability_overview():
+    command_base = "SELECT COUNT(*) FROM `會員資料` WHERE `身心障礙` LIKE "
+    with conn.cursor() as cur:
+        cur.execute(countCommand("會員資料"))
+        amount_of_clients = cur.fetchone()[0]
+
+        cur.execute(command_base + "'%是%'")
+        disability_amount = cur.fetchone()[0]
+
+        cur.execute(command_base + "'%輕度%'")
+        disability_level_1 = cur.fetchone()[0]
+
+        cur.execute(command_base + "'%中度%'")
+        disability_level_2 = cur.fetchone()[0]
+
+        cur.execute(command_base + "'%重度%'")
+        disability_level_3 = cur.fetchone()[0]
+
+    print("[*]" + "="*40)
+    print(f"[*]資料庫: {db_settings['database']} 的 {amount_of_clients} 名會員中共有 {disability_amount} 人領有身心障礙手冊\n[*]分別為: ")
+    print(f"[*]    輕度: {disability_level_1} 人")
+    print(f"[*]    中度: {disability_level_2} 人")
+    print(f"[*]    重度: {disability_level_3} 人")
+    print("[*]" + "="*40)
+    print(f"[*]資料庫總人數為 {amount_of_clients} 人")
+
+
+def travelsDay_ranking_overview():
+    with conn.cursor() as cur:
+        cur.execute(countCommand("會員資料"))
+        amount_of_clients = cur.fetchone()[0]
+
+    while True:
+        try:
+            topNums = int(input(f"[?]請問要搜尋前幾名(輸入1~{amount_of_clients}之數值)? "))
+            if topNums < 1 or topNums > amount_of_clients:
+                raise IndexError
+            break
+        except ValueError:
+            print("[!]請輸入數字，請勿輸入數字以外的格式!")
+        except IndexError:
+            print(f"[!]請確保你輸入的是『1 ~ {amount_of_clients}』之數值，數值不能超過資料數的人數!")
+
+    with conn.cursor() as cur:
+        command = "SELECT `姓名`, `旅遊天數` FROM `會員資料` ORDER BY `會員資料`.`旅遊天數` DESC LIMIT " + str(topNums)
+        cur.execute(command)
+        leaderboard = cur.fetchall()
+
+    print("[*]" + "="*40)
+    for idx, ranking in enumerate(leaderboard):
+        print(f"[>]第{idx+1:3d} 名: {ranking[0]:4s} 共參加了 {ranking[1]:4d} 天旅遊行程")
+    print("[*]" + "="*40)
+    print(f"[*]資料庫總人數為 {amount_of_clients} 人")
+
+
+def discountCode_overview():
+    with conn.cursor() as cur:
+        cur.execute(countCommand("旅遊金序號"))
+        amount_of_discountCode = cur.fetchone()[0]
+        cur.execute("SELECT SUM(`金額`) FROM `旅遊金序號` WHERE 1")
+        total_value = cur.fetchone()[0]
+        cur.execute("SELECT MAX(`金額`) FROM `旅遊金序號` WHERE 1")
+        max_value = cur.fetchone()[0]
+        cur.execute("SELECT MIN(`金額`) FROM `旅遊金序號` WHERE 1")
+        min_value = cur.fetchone()[0]
+        cur.execute("SELECT AVG(`金額`) FROM `旅遊金序號` WHERE 1")
+        avg_value = cur.fetchone()[0]
+        cur.execute("SELECT SUM(`金額`) FROM `旅遊金序號` WHERE `是否使用過` = '1'")
+        used_value = cur.fetchone()[0]
+
+    print("[*]" + "="*40)
+    print(f"[*]已發行之旅遊金序號總數為 {amount_of_discountCode} 張 -> 總價值: {total_value} 元")
+    print("[*]" + "="*40)
+    print(f"[*]已兌換的折扣金額為: {int(used_value): 6d} 元")
+    print(f"[*]未兌換的折扣金額為: {int((total_value - used_value)): 6d} 元")
+    print(f"[*]發行過最大的面額為: {max_value: 6d} 元")
+    print(f"[*]發行過最小的面額為: {min_value: 6d} 元")
+    print(f"[*]所有折扣碼面額平均: {avg_value: 6.2f} 元")
+    print("[*]" + "="*40)
+
+
 functionDefined = {
     "1": registeForm_processing,
     "2": discountCode_Manager,
@@ -1083,6 +1263,7 @@ functionDefined = {
     "4": addClientProfile,
     "5": dataRepeatCheck,
     "6": open_phpMyAdmin,
+    "7": overview,
     "E": exit_pinkbird_system,
     "e": exit_pinkbird_system,
 }
@@ -1176,6 +1357,7 @@ if __name__ == "__main__":
         print("[*]" + "\t  4. 手動新增會員資料")
         print("[*]" + "\t  5. 檢查會員資料是否重複")
         print("[*]" + "\t  6. 開啟網頁版管理介面")
+        print("[*]" + "\t  7. 資料庫總覽")
         print("[*]" + "\t  e. 離開系統")
         print("[*]" + "=" * 40)
         print("[*]在各功能介面中，隨時可以按下「Ctrl + C」回到此主選單介面")
@@ -1214,6 +1396,8 @@ if __name__ == "__main__":
                 operationName_inChinese = "檢查會員資料是否重複"
             elif functionChoose == "6":
                 operationName_inChinese = "開啟網頁版管理介面"
+            elif functionChoose == "7":
+                operationName_inChinese = "資料庫總覽"
             elif functionChoose in ("e", "E"):
                 operationName_inChinese = "結束系統"
 
