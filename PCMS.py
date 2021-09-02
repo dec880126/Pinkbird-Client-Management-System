@@ -1244,6 +1244,9 @@ def discountCode_overview():
         avg_value = cur.fetchone()[0]
         cur.execute("SELECT SUM(`金額`) FROM `旅遊金序號` WHERE `是否使用過` = '1'")
         used_value = cur.fetchone()[0]
+        
+    if used_value == None:
+        used_value = 0
 
     print("[*]" + "="*40)
     print(f"[*]已發行之旅遊金序號總數為 {amount_of_discountCode} 張 -> 總價值: {total_value} 元")
