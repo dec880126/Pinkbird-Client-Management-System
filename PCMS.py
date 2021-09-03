@@ -1288,8 +1288,13 @@ functionDefined = {
 }
 
 def connect_sql_server():
-    global conn
-    conn = pymysql.connect(**db_settings)
+    global loginSuccess
+    try:
+        global conn
+        conn = pymysql.connect(**db_settings)
+        loginSuccess = True
+    except pymysql.err.OperationalError:
+        loginSuccess = False
 
 if __name__ == "__main__":
     # <----- System setting config start ----->
@@ -1311,6 +1316,7 @@ if __name__ == "__main__":
     print("[*]" + "粉鳥旅行社會員資料庫管理系統".center(25))
     print("[*]" + programVersion.center(35))
     print("[*]========================================")
+    loginSuccess = False
     retryLoginCount = 0
     while True:
         global db_settings
@@ -1322,7 +1328,7 @@ if __name__ == "__main__":
             "password": input("[?]密碼: "),
             "database": "pinkbird",
             "charset": "utf8",
-        }
+        }        
         print("[*]========================================")
         try:
             login_threading = threading.Thread(target=connect_sql_server)
@@ -1340,7 +1346,10 @@ if __name__ == "__main__":
                 if not login_threading.is_alive():
                     break
             loginTime = datetime.datetime.now()
-            login_threading.join()
+            login_threading.join()            
+            
+            if not loginSuccess:
+                raise pymysql.err.OperationalError
             print(f"[*]資料庫: {db_settings['database']} 連線成功!")
             loginSuccess = True
             break
