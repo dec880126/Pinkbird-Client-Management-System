@@ -17,7 +17,6 @@ ALL OF THE FUNCTION PROVIDED ARE WORKING BASE ON SQL(Structured Query Language)
 import pandas as pd
 import pymysql
 import datetime
-from rich.progress import track
 import sys
 import os
 import string
@@ -25,6 +24,7 @@ import secrets
 import webbrowser
 import threading
 import time
+from rich.progress import track
 
 # ? Packages
 import package.year_cal as year_cal
@@ -491,7 +491,7 @@ def generate_discountCode(codeAmount, randomAmount, codeValue, prefix, clientNam
             # <----- 亂碼產生 start ----->
             codeKey = prefix + "".join(
                 secrets.choice(string.ascii_letters) for _ in range(randomAmount)
-            )
+            ) + str(codeValue)
             # <----- 亂碼產生 end ----->
 
             # <----- 保證產生的序號永不重複 start ----->
