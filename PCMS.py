@@ -23,7 +23,8 @@ import os
 import string
 import secrets
 import webbrowser
-
+import threading
+import time
 
 # ? Packages
 import package.year_cal as year_cal
@@ -31,7 +32,7 @@ import package.config as config
 from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand, countCommand, searchCommand_sp
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.3.0"
+programVersion = "版本: " + "5.3.1"
 
 class Client:
     def __init__(self) -> None:
@@ -1052,6 +1053,14 @@ def open_phpMyAdmin():
     print("[*]===============================================")
 
 
+def open_github():
+    print("[*]===============================================")
+    github_link = "https://github.com/dec880126/Pinkbird-Client-Management-System"
+    webbrowser.open_new(github_link)
+    print("[*]已於預設瀏覽器中開啟: Pinkbird-Client-Management-System(GitHub)")
+    print("[*]===============================================")
+
+
 def pinkbird_function(functionChoose, functionName):
     """
     功能清單
@@ -1199,6 +1208,9 @@ def disability_overview():
     print(f"[*]    輕度: {disability_level_1} 人")
     print(f"[*]    中度: {disability_level_2} 人")
     print(f"[*]    重度: {disability_level_3} 人")
+    if disability_level_1 + disability_level_2 + disability_level_3 != disability_amount:
+        unlabeled = disability_amount - (disability_level_1 + disability_level_2 + disability_level_3)
+        print(f"[*]    未登記: {unlabeled} 人")
     print("[*]" + "="*40)
     print(f"[*]資料庫總人數為 {amount_of_clients} 人")
 
@@ -1270,21 +1282,26 @@ functionDefined = {
     "5": dataRepeatCheck,
     "6": open_phpMyAdmin,
     "7": overview,
+    # "i": open_github,
     "E": exit_pinkbird_system,
-    "e": exit_pinkbird_system,
+    "e": exit_pinkbird_system
 }
+
+def connect_sql_server():
+    global conn
+    conn = pymysql.connect(**db_settings)
 
 if __name__ == "__main__":
     # <----- System setting config start ----->
     if not config.check_config_if_exist(path=f"{os.getcwd()}\\config.ini"):
         print("[!]警告: 系統找不到 config.ini")
-        print(f"[/]自動產生 config.ini 中...")
+        print(f"[/]正在自動產生 config.ini ...")
 
         configPath = f"{os.getcwd()}\\config.ini"
         config.make_config(configPath, configMode=1)
 
         print(f"[*]config.ini 產生成功 -> 檔案路徑: {configPath}")
-        print("[!]訊息: 請在完成設定 config.ini 後再重新開啟程式")
+        print("[!]訊息: 請在完成 config.ini 配置後再重新開啟程式")
         os.system("pause")
         sys.exit()
     configResult = config.load_config(path="./config.ini")
@@ -1308,20 +1325,29 @@ if __name__ == "__main__":
         }
         print("[*]========================================")
         try:
-            global conn
-            print(
-                f"[-]連接至資料庫 -> {db_settings['database']} 中, 路徑為: {db_settings['host']}:{db_settings['port']}"
-            )
+            login_threading = threading.Thread(target=connect_sql_server)
+            login_threading.start()
+
+            while True:
+                clearConsole()
+                print("[*]=================================================================================================")
+                print(f"[-]連接至資料庫 -> {db_settings['database']} 中, 路徑為: {db_settings['host']}:{db_settings['port']}")
+                for step in track(range(300), description="[\]連線中...", ):
+                    if login_threading.is_alive():
+                        time.sleep(0.05)
+                    else:
+                        time.sleep(0.0005)
+                if not login_threading.is_alive():
+                    break
             loginTime = datetime.datetime.now()
-            conn = pymysql.connect(**db_settings)
-            clearConsole()
+            login_threading.join()
             print(f"[*]資料庫: {db_settings['database']} 連線成功!")
             loginSuccess = True
             break
         except pymysql.err.OperationalError:
             print(f"[!]第 {retryLoginCount+1} 次嘗試登入失敗")
             if retryLoginCount > 0:
-                print("[*](看到這段訊息代表你嘗試登入失敗一次以上)如果確認帳號密碼輸入無錯誤，可能是網路連線上的設定問題，請連絡相關人員設定")
+                print("[!](看到這段訊息代表你嘗試登入失敗一次以上)如果確認帳號密碼輸入無錯誤，可能是網路連線上的設定問題，請連絡相關人員設定")
             retryLogin = input("[!]帳號或密碼有錯，請問是否要重新輸入，否則系統自動關閉(Y/N): ")
             loginSuccess = False
             if retryLogin in ("y", "Y"):
@@ -1348,6 +1374,7 @@ if __name__ == "__main__":
 
             config.write_config(path=configPath, content=loginLog)
             # <----- Write Login Log end ----->
+
     # <----- Main Loop start ----->
     while True:
         print("[*]========================================")
@@ -1355,7 +1382,7 @@ if __name__ == "__main__":
         print("[*]" + programVersion.center(35))
         print("[*]========================================")
         print(f'[*]目前登入身分為: {db_settings["user"]}')
-        print(f'[*]登入時間為: {loginTime.strftime("%Y-%m-%d_%H:%M:%S")}')
+        print(f'[*]登入時間為: {loginTime.strftime("%Y-%m-%d %H:%M:%S")}')
         print("[*]" + "================功能選項================")
         print("[*]" + "\t  1. 產生出團名冊")
         print("[*]" + "\t  2. 旅遊金序號管理")
@@ -1404,6 +1431,8 @@ if __name__ == "__main__":
                 operationName_inChinese = "開啟網頁版管理介面"
             elif functionChoose == "7":
                 operationName_inChinese = "資料庫總覽"
+            # elif functionChoose == "i":
+            #     operationName_inChinese = "開啟GitHub"
             elif functionChoose in ("e", "E"):
                 operationName_inChinese = "結束系統"
 
