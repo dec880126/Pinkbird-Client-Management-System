@@ -9,7 +9,7 @@ FUNCTION LIST:
  - Add NEW Clients' profile
  - Check if the data has duplicated in the database
  - Open phpMyAdmin in default web browser
- - Database's overview and analysis
+ - Overview and analysis of database
 
 ALL OF THE FUNCTION PROVIDED ARE WORKING BASE ON SQL(Structured Query Language)
 """
