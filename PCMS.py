@@ -32,7 +32,7 @@ import package.config as config
 from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand, countCommand, searchCommand_sp
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.3.1"
+programVersion = "版本: " + "5.5.0"
 
 class Client:
     def __init__(self) -> None:
@@ -228,19 +228,47 @@ def registeForm_processing():
     try:
         cursor = conn.cursor()
         print(f"[-]正在向資料庫 {db_settings['database']} 請求資料")
-        cursor.execute(
-            searchCommand(
-                listFrom="會員資料",
-                key="身分證字號",
-                searchBy=[client.id for client in attendClient_Dict.values()],
+
+        # 2021.09.04 fixed: 修正遇到未註冊會員時的判斷與處理機制
+        clientIDs = [client.id for client in attendClient_Dict.values()]
+        clientDatas = {}
+        illegal_IDs = []
+
+        for step, ID in zip(track(clientIDs, description="[\]正在確認會員資料中"), clientIDs):
+            cursor.execute(
+                searchCommand(
+                    listFrom="會員資料",
+                    key="身分證字號",
+                    searchBy=ID,
+                )
             )
-        )
+            
+            clientDatas[ID] = cursor.fetchone()
 
+            if clientDatas[ID] == None:                
+                illegal_IDs.append(ID)
+            time.sleep(0.005)
+        print("[*]確認完成 ! ")
+
+        if illegal_IDs:
+            print("========================================================================================")
+            print("[!]下列身份證字號並未在資料庫中 ! 可能是輸入錯誤或是尚未註冊")
+            for idx, ID in enumerate(illegal_IDs):
+                print(f"[>]\t{idx+1}. 身份證字號: {ID} ")
+            print("========================================================================================")
+
+            print("[*]請在確認完出團清單中的會員編號皆完成註冊後，再重新執行出團作業 ! ")
+            return
+
+                
+        clearConsole()
+        print("========================================================================================")
         print("[*]以下為查詢結果:")
-        result = cursor.fetchall()
 
-        for step, item in zip(track(result, description="[\]處理中"), result):
+        for step, ID in zip(track(clientIDs, description="[\]處理中"), clientIDs):
             # <---------- client Processing start ---------->
+            item = clientDatas[ID]           
+
             if departMode == 1:
                 IDhere = item[1]
                 client = attendClient_Dict[IDhere]
@@ -448,9 +476,9 @@ def registeForm_processing():
             df = xlsx_DataFrame(
                 clientList=attendClient_Dict.values(), mode="including_roomType"
             )
-        print("======================================================================")
+        print("[*]======================================================================")
         print(df)
-        print("======================================================================")
+        print("[*]======================================================================")
 
         excelName = "出團清冊" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".xlsx"
         df.to_excel(excelName, sheet_name="出團清冊", index=False, na_rep="空值")
@@ -479,7 +507,7 @@ def registeForm_processing():
         print("[!]警告: 可能在出團模式選擇處選擇錯誤，請確認輸入的Excel表格是否為有包含房型選項的格式，確認後請重新選擇出團模式為「報名表單包含房型選項」")
         print("[*]===================================================================================================================================")
     finally: 
-        input("[*]請按任意鍵回到 粉鳥旅行社會員資料庫管理系統-功能選擇介面...")
+        pass
 
 
 def generate_discountCode(codeAmount, randomAmount, codeValue, prefix, clientName, deadline):
@@ -1131,8 +1159,8 @@ def overview():
             disability_overview()
         elif typeChoose == 5:
             discountCode_overview()
-        
-        input("[*]請按鍵盤上的「Enter」鍵以繼續...")
+
+        os.system("pause")
     
 
 def foodType_overview():
@@ -1145,8 +1173,8 @@ def foodType_overview():
         vegetarian = cur.fetchone()[0]
     
     print("[*]" + "="*40)
-    print(f"[*]餐食為「素食」者共有 {vegetarian} 人")
-    print(f"[*]餐食為「葷食」者共有 {meatfood} 人")
+    print(f"[*]餐食為「素食」者共有 {vegetarian} 人    -> {vegetarian/amount_of_clients*100: 3.2f}%")
+    print(f"[*]餐食為「葷食」者共有 {meatfood} 人    -> {meatfood/amount_of_clients*100: 3.2f}%")
     print("[*]" + "="*40)
     print(f"[*]資料庫總人數為 {amount_of_clients} 人")
 
@@ -1176,11 +1204,11 @@ def ages_overview():
                 age_65up += 1
         
     print("[*]" + "="*40)
-    print(f"[*] 0  ~ 3   歲共有 {age_0_3} 人")
-    print(f"[*] 4  ~ 6   歲共有 {age_4_6} 人")
-    print(f"[*] 7  ~ 12  歲共有 {age_7_12} 人")
-    print(f"[*] 13 ~ 64  歲共有 {age_13_64} 人")
-    print(f"[*]   >= 65  歲共有 {age_65up} 人")
+    print(f"[*] 0  ~ 3   歲共有 {age_0_3} 人    -> {age_0_3/amount_of_clients*100: 3.2f}%")
+    print(f"[*] 4  ~ 6   歲共有 {age_4_6} 人    -> {age_4_6/amount_of_clients*100: 3.2f}%")
+    print(f"[*] 7  ~ 12  歲共有 {age_7_12} 人    -> {age_7_12/amount_of_clients*100: 3.2f}%")
+    print(f"[*] 13 ~ 64  歲共有 {age_13_64} 人    -> {age_13_64/amount_of_clients*100: 3.2f}%")
+    print(f"[*]   >= 65  歲共有 {age_65up} 人    -> {age_65up/amount_of_clients*100: 3.2f}%")
     print("[*]" + "="*40)
     print(f"[*]資料庫總人數為 {amount_of_clients} 人，平均 {total_age/amount_of_clients: 2.2f} 歲")
 
@@ -1334,17 +1362,29 @@ if __name__ == "__main__":
             login_threading = threading.Thread(target=connect_sql_server)
             login_threading.start()
 
+            # 2021.09.04 updated
+            login_start_time = datetime.datetime.now()
+            timeout = 60
+            timeout_check = True
             while True:
                 clearConsole()
                 print("[*]=================================================================================================")
                 print(f"[-]連接至資料庫 -> {db_settings['database']} 中, 路徑為: {db_settings['host']}:{db_settings['port']}")
+                
                 for step in track(range(300), description="[\]連線中...", ):
+                    login_end_time = datetime.datetime.now()
+                    
                     if login_threading.is_alive():
                         time.sleep(0.05)
                     else:
-                        time.sleep(0.0005)
+                        pass
+
+                    if (login_end_time - login_start_time).seconds > timeout:
+                        raise TimeoutError
+                
                 if not login_threading.is_alive():
                     break
+            
             loginTime = datetime.datetime.now()
             login_threading.join()            
             
@@ -1352,6 +1392,7 @@ if __name__ == "__main__":
                 raise pymysql.err.OperationalError
             print(f"[*]資料庫: {db_settings['database']} 連線成功!")
             loginSuccess = True
+            timeout_check = False
             break
         except pymysql.err.OperationalError:
             print(f"[!]第 {retryLoginCount+1} 次嘗試登入失敗")
@@ -1364,11 +1405,12 @@ if __name__ == "__main__":
                 continue
             else:
                 exit_pinkbird_system()
-        finally:
+        except TimeoutError:
+            print("[!]連線逾時... 請檢查網路相關設定 !")
             # <----- Write Login Log start ----->
             configBasePath = f"{os.getcwd()}\\登入紀錄"
             configPath = (
-                configBasePath + "\\" + f"{loginTime.strftime('%Y-%m')}月份-登入紀錄.ini"
+                configBasePath + "\\" + f"{login_start_time.strftime('%Y-%m')}月份-登入紀錄.ini"
             )
             if not os.path.isdir(configBasePath):
                 os.mkdir(configBasePath)
@@ -1376,13 +1418,31 @@ if __name__ == "__main__":
             if not config.check_config_if_exist(configPath):
                 config.make_config(configPath, configMode=2)
 
-            if loginSuccess:
-                loginLog = f"{loginTime}\t{db_settings['user']}\t{'登入成功'}\n"
-            else:
-                loginLog = f"{loginTime}\t{db_settings['user']}\t第 {retryLoginCount+1} 次嘗試登入失敗\n"
-
+            loginLog = f"{login_start_time}\t{db_settings['user']}\t{'連線逾時'}\n"
             config.write_config(path=configPath, content=loginLog)
             # <----- Write Login Log end ----->
+            sys.exit()        
+        finally:
+            if not timeout_check:
+                # 連線逾時的狀況下 loginTime is undefine
+                # <----- Write Login Log start ----->
+                configBasePath = f"{os.getcwd()}\\登入紀錄"
+                configPath = (
+                    configBasePath + "\\" + f"{loginTime.strftime('%Y-%m')}月份-登入紀錄.ini"
+                )
+                if not os.path.isdir(configBasePath):
+                    os.mkdir(configBasePath)
+
+                if not config.check_config_if_exist(configPath):
+                    config.make_config(configPath, configMode=2)
+
+                if loginSuccess:
+                    loginLog = f"{loginTime}\t{db_settings['user']}\t{'登入成功'}\n"
+                else:
+                    loginLog = f"{loginTime}\t{db_settings['user']}\t第 {retryLoginCount+1} 次嘗試登入失敗\n"
+
+                config.write_config(path=configPath, content=loginLog)
+                # <----- Write Login Log end ----->
 
     # <----- Main Loop start ----->
     while True:
