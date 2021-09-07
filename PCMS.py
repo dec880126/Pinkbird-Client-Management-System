@@ -32,7 +32,7 @@ import package.config as config
 from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand, countCommand, searchCommand_sp
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.5.0"
+programVersion = "版本: " + "5.6.0"
 
 class Client:
     def __init__(self) -> None:
@@ -111,27 +111,35 @@ def registeForm_processing():
                 # ValueError: Worksheet named '表單回應 1' not found
                 df = pd.read_excel(
                     filePath,
-                    sheet_name="表單回應 1",
-                    usecols="B:G",  # B:G順序為: "身分證字號", "連絡電話", "上車地點", "身心障礙手冊", "序號", "座位"
+                    sheet_name="表單回應 1",                    
+                    # 無身心障礙手冊選項 -> B:F順序為: "身分證字號", "連絡電話", "上車地點", "序號", "座位"
+                    # 有身心障礙手冊選項 -> B:G順序為: "身分證字號", "連絡電話", "上車地點", "身心障礙手冊", "序號", "座位"
+                    usecols= "B:G" if disability_switch else "B:F"
                 )
             except ValueError:
                 df = pd.read_excel(
                     filePath,
                     sheet_name="Form Responses 1",
-                    usecols="B:G",  # B:G順序為: "身分證字號", "連絡電話", "上車地點", "身心障礙手冊", "序號", "座位"
+                    # 無身心障礙手冊選項 -> B:F順序為: "身分證字號", "連絡電話", "上車地點", "序號", "座位"
+                    # 有身心障礙手冊選項 -> B:G順序為: "身分證字號", "連絡電話", "上車地點", "身心障礙手冊", "序號", "座位"
+                    usecols= "B:G" if disability_switch else "B:F"
                 )
         elif departMode == 2:
             try:
                 df = pd.read_excel(
                     filePath,
                     sheet_name="表單回應 1",
-                    usecols="B:I",  # B:I順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "身心障礙手冊", "序號", "座位"
+                    # 無身心障礙手冊選項 -> B:H順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "序號", "座位"
+                    # 有身心障礙手冊選項 -> B:I順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "身心障礙手冊", "序號", "座位"
+                    usecols= "B:I" if disability_switch else "B:H"
                 )
             except ValueError:
                 df = pd.read_excel(
                     filePath,
                     sheet_name="Form Responses 1",
-                    usecols="B:I",  # B:I順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "身心障礙手冊", "序號", "座位"
+                    # 無身心障礙手冊選項 -> B:H順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "序號", "座位"
+                    # 有身心障礙手冊選項 -> B:I順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "身心障礙手冊", "序號", "座位"
+                    usecols= "B:I" if disability_switch else "B:H"
                 )
         # print(df)
     except OSError:
@@ -191,21 +199,25 @@ def registeForm_processing():
             IDhere = df.at[idx, df.columns[0]]
             attendClient_Dict[IDhere] = Client()
 
-            # 順序為: "身分證字號", "連絡電話", "上車地點", "身心障礙手冊", "序號", "座位"
+            # 順序為: 
+            #   無身心障礙手冊 -> 0."身分證字號", 1."連絡電話", 2."上車地點", 3."序號", 4."座位"
+            #   有身心障礙手冊 -> 0."身分證字號", 1."連絡電話", 2."上車地點", 3."身心障礙手冊", 4."序號", 5."座位"
             attendClient_Dict[IDhere].id = IDhere
             attendClient_Dict[IDhere].phone = df.at[idx, df.columns[1]]
             attendClient_Dict[IDhere].location = df.at[idx, df.columns[2]]
-            attendClient_Dict[IDhere].disability = str(df.at[idx, df.columns[3]])
-            attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[4]])            
-            attendClient_Dict[IDhere].seat = df.at[idx, df.columns[5]]
+            if disability_switch:
+                attendClient_Dict[IDhere].disability = str(df.at[idx, df.columns[3]])
+            attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[4]]) if disability_switch else str(df.at[idx, df.columns[3]])
+            attendClient_Dict[IDhere].seat = str(df.at[idx, df.columns[5]]) if disability_switch else str(df.at[idx, df.columns[4]])
             attendClient_Dict[IDhere].roomType = None
             attendClient_Dict[IDhere].roommate = None
             
 
             # 測試讀取錯誤的狀況 如果出正常則continue，否則系統將顯示提醒訊息
             # print(attendClient_Dict[IDhere].disability)
-            if "是" in attendClient_Dict[IDhere].disability or "否" in attendClient_Dict[IDhere].disability:
-                continue
+            # if "是" in attendClient_Dict[IDhere].disability or "否" in attendClient_Dict[IDhere].disability:
+            # 2021.09.07關閉身心障礙手冊功能
+            continue
 
             print("[!]可能是出團表單中包含房型選項，請重新選擇出團模式")
             raise KeyboardInterrupt
@@ -214,15 +226,18 @@ def registeForm_processing():
             IDhere = df.at[idx, df.columns[0]]
             attendClient_Dict[IDhere] = Client()
 
-            # 順序為: "身分證字號", "連絡電話", "上車地點", "房型", "同房者", "身心障礙手冊", "序號", "座位"
+            # 順序為:
+            #   無身心障礙手冊 -> 0."身分證字號", 1."連絡電話", 2."上車地點", 3."房型", 4."同房者", 5."序號", 6."座位"
+            #   有身心障礙手冊 -> 0."身分證字號", 1."連絡電話", 2."上車地點", 3."房型", 4."同房者", 5."身心障礙手冊", 6."序號", 7."座位"
             attendClient_Dict[IDhere].id = IDhere
             attendClient_Dict[IDhere].phone = df.at[idx, df.columns[1]]
             attendClient_Dict[IDhere].location = df.at[idx, df.columns[2]]
             attendClient_Dict[IDhere].roomType = df.at[idx, df.columns[3]]
             attendClient_Dict[IDhere].roommate = df.at[idx, df.columns[4]]
-            attendClient_Dict[IDhere].disability = df.at[idx, df.columns[5]]
-            attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[6]])
-            attendClient_Dict[IDhere].seat = df.at[idx, df.columns[7]]
+            if disability_switch:
+                attendClient_Dict[IDhere].disability = df.at[idx, df.columns[5]]
+            attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[6]]) if disability_switch else str(df.at[idx, df.columns[5]])
+            attendClient_Dict[IDhere].seat = df.at[idx, df.columns[7]] if disability_switch else str(df.at[idx, df.columns[6]])
     # <---------- client class processing end ---------->
 
     try:
@@ -470,11 +485,15 @@ def registeForm_processing():
         # <---------- Making xlsx start ---------->
         if departMode == 1:
             df = xlsx_DataFrame(
-                clientList=attendClient_Dict.values(), mode="excluding_roomType"
+                clientList=attendClient_Dict.values(),
+                mode="excluding_roomType",
+                disability=disability_switch
             )
         elif departMode == 2:
             df = xlsx_DataFrame(
-                clientList=attendClient_Dict.values(), mode="including_roomType"
+                clientList=attendClient_Dict.values(),
+                mode="including_roomType",
+                disability=disability_switch
             )
         print("[*]======================================================================")
         print(df)
@@ -786,8 +805,12 @@ def editClientProfile():
     clientID = input("[?]請輸入要更新資料的會員的身分證字號: ")
     editor.execute(searchCommand(listFrom="會員資料", key="身分證字號", searchBy=clientID))
     clientData = editor.fetchone()
+    
     try:
-        preData = f"姓名: {clientData[0]}    身分證字號: {clientData[1]}    生日: {clientData[2]}   電話: {clientData[3]}   餐食: {clientData[4]}   特殊需求: {clientData[5]}   社群暱稱: {clientData[6]}   身心障礙: {clientData[8]}"
+        if disability_switch:
+            preData = f"姓名: {clientData[0]}    身分證字號: {clientData[1]}    生日: {clientData[2]}   電話: {clientData[3]}   餐食: {clientData[4]}   特殊需求: {clientData[5]}   社群暱稱: {clientData[6]}   身心障礙: {clientData[8]}"
+        else:
+            preData = f"姓名: {clientData[0]}    身分證字號: {clientData[1]}    生日: {clientData[2]}   電話: {clientData[3]}   餐食: {clientData[4]}   特殊需求: {clientData[5]}   社群暱稱: {clientData[6]}"
     except TypeError:
         print(f"[!]資料庫中無 身分證字號: {clientID} 對應之資料")
         return
@@ -799,9 +822,11 @@ def editClientProfile():
         "[*]========================================================================================================================"
     )
     print("[*]如果只是要查詢會員資料請在確認完會員資料後輸入「e」即可")
-    print(
-        "[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    8.身心障礙    delete: 刪除此筆會員資料    e: 不做任何操作"
-    )
+    if disability_switch:
+        print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    8.身心障礙    delete: 刪除此筆會員資料    e: 不做任何操作")
+    else:
+        print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    delete: 刪除此筆會員資料    e: 不做任何操作")
+
     editMode_Dict = {
         "1": "姓名",
         "2": "身分證字號",
@@ -819,6 +844,9 @@ def editClientProfile():
             print("[!]已取消編輯...")
             return 0
         elif editMode in ("1", "2", "3", "4", "5", "6", "7", "8", "delete"):
+            if editMode == "8" and not disability_switch:
+                print('[!]請重新輸入「編輯選項」中的選項...')
+                continue
             break
         else:
             print('[!]請重新輸入「編輯選項」中的選項...')
@@ -859,7 +887,10 @@ def editClientProfile():
         print(
             "[*]======================================================更新後的資料======================================================="
         )
-        output = f"姓名: {clientDataNew[0]}    身分證字號: {clientDataNew[1]}    生日: {clientDataNew[2]}   電話: {clientDataNew[3]}   餐食: {clientDataNew[4]}   特殊需求: {clientDataNew[5]}   社群暱稱: {clientDataNew[6]}   身心障礙: {clientDataNew[8]}"
+        if disability_switch:
+            output = f"姓名: {clientDataNew[0]}    身分證字號: {clientDataNew[1]}    生日: {clientDataNew[2]}   電話: {clientDataNew[3]}   餐食: {clientDataNew[4]}   特殊需求: {clientDataNew[5]}   社群暱稱: {clientDataNew[6]}   身心障礙: {clientDataNew[8]}"
+        else:
+            output = f"姓名: {clientDataNew[0]}    身分證字號: {clientDataNew[1]}    生日: {clientDataNew[2]}   電話: {clientDataNew[3]}   餐食: {clientDataNew[4]}   特殊需求: {clientDataNew[5]}   社群暱稱: {clientDataNew[6]}"
         print("[>]" + output)
         print(
             "[*]========================================================================================================================"
@@ -902,26 +933,45 @@ def addClientProfile():
     addClient.specialNeeds = input("[?]請輸入 特殊需求: ")
     addClient.nickName = input("[?]請輸入 社群暱稱: ")
     addClient.travelDays = 0  # 新進客戶預設為0
-    addClient.disability = input("[?]是否領有身心障礙手冊: ")
+    if disability_switch:
+        addClient.disability = input("[?]是否領有身心障礙手冊: ")
 
     editor = conn.cursor()
-    editor.execute(
-        insertCommand(
-            listFrom="會員資料",
-            key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
-            value=(
-                addClient.name,
-                addClient.id,
-                addClient.birthday,
-                addClient.phone,
-                addClient.foodType,
-                addClient.specialNeeds,
-                addClient.nickName,
-                addClient.travelDays,
-                addClient.disability
-            ),
+    if disability_switch:
+        editor.execute(
+            insertCommand(
+                listFrom="會員資料",
+                key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
+                value=(
+                    addClient.name,
+                    addClient.id,
+                    addClient.birthday,
+                    addClient.phone,
+                    addClient.foodType,
+                    addClient.specialNeeds,
+                    addClient.nickName,
+                    addClient.travelDays,
+                    addClient.disability
+                ),
+            )
         )
-    )
+    else:
+        editor.execute(
+            insertCommand(
+                listFrom="會員資料",
+                key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數"),
+                value=(
+                    addClient.name,
+                    addClient.id,
+                    addClient.birthday,
+                    addClient.phone,
+                    addClient.foodType,
+                    addClient.specialNeeds,
+                    addClient.nickName,
+                    addClient.travelDays
+                ),
+            )
+        )
     conn.commit()
     editor.execute(searchCommand(listFrom="會員資料", key="身分證字號", searchBy=addClient.id))
     newData = editor.fetchall()[0]
@@ -932,7 +982,10 @@ def addClientProfile():
     print(
         "[*]======================================================新增客戶資料======================================================="
     )
-    printData = f"姓名: {newData[0]}    身分證字號: {newData[1]}    生日: {newData[2]}   電話: {newData[3]}   餐食: {newData[4]}   特殊需求: {newData[5]}   社群暱稱: {newData[6]}   旅遊天數: {newData[7]}    身心障礙: {newData[8]}"
+    if disability_switch:
+        printData = f"姓名: {newData[0]}    身分證字號: {newData[1]}    生日: {newData[2]}   電話: {newData[3]}   餐食: {newData[4]}   特殊需求: {newData[5]}   社群暱稱: {newData[6]}   旅遊天數: {newData[7]}    身心障礙: {newData[8]}"
+    else:
+        printData = f"姓名: {newData[0]}    身分證字號: {newData[1]}    生日: {newData[2]}   電話: {newData[3]}   餐食: {newData[4]}   特殊需求: {newData[5]}   社群暱稱: {newData[6]}   旅遊天數: {newData[7]}"
     print("[>]" + printData)
     print(
         "[*]========================================================================================================================"
@@ -990,10 +1043,30 @@ def dataRepeatCheck():
                 repeateID_Dict[idx + 1].specialNeeds = searchResult[5]
                 repeateID_Dict[idx + 1].nickName = searchResult[6]
                 repeateID_Dict[idx + 1].travelDays = searchResult[7]
-                repeateID_Dict[idx + 1].disability = searchResult[8]
-                print(
-                    f"[>]{idx+1}. 姓名: {repeateID_Dict[idx+1].name}\t身分證字號: {repeateID_Dict[idx+1].id}\t生日: {repeateID_Dict[idx+1].birthday}\t電話: {repeateID_Dict[idx+1].phone}\t餐食: {repeateID_Dict[idx+1].foodType}\t特殊需求: {repeateID_Dict[idx+1].specialNeeds}\t暱稱: {repeateID_Dict[idx+1].nickName}\t旅遊天數: {repeateID_Dict[idx+1].travelDays}\t身心障礙: {repeateID_Dict[idx+1].disability}"
-                )
+                if disability_switch:
+                    repeateID_Dict[idx + 1].disability = searchResult[8]
+                    print(
+                        f"[>]{idx+1}. 姓名: {repeateID_Dict[idx+1].name}\t" + 
+                        f"身分證字號: {repeateID_Dict[idx+1].id}\t" + 
+                        f"生日: {repeateID_Dict[idx+1].birthday}\t" + 
+                        f"電話: {repeateID_Dict[idx+1].phone}\t" + 
+                        f"餐食: {repeateID_Dict[idx+1].foodType}\t" + 
+                        f"特殊需求: {repeateID_Dict[idx+1].specialNeeds}\t" + 
+                        f"暱稱: {repeateID_Dict[idx+1].nickName}\t" + 
+                        f"旅遊天數: {repeateID_Dict[idx+1].travelDays}\t" + 
+                        f"身心障礙: {repeateID_Dict[idx+1].disability}"
+                    )
+                else:
+                    print(
+                        f"[>]{idx+1}. 姓名: {repeateID_Dict[idx+1].name}\t" + 
+                        f"身分證字號: {repeateID_Dict[idx+1].id}\t" + 
+                        f"生日: {repeateID_Dict[idx+1].birthday}\t" + 
+                        f"電話: {repeateID_Dict[idx+1].phone}\t" + 
+                        f"餐食: {repeateID_Dict[idx+1].foodType}\t" + 
+                        f"特殊需求: {repeateID_Dict[idx+1].specialNeeds}\t" + 
+                        f"暱稱: {repeateID_Dict[idx+1].nickName}\t" + 
+                        f"旅遊天數: {repeateID_Dict[idx+1].travelDays}"
+                    )
             while True:
                 try:
                     selectFromRepeat = int(
@@ -1004,18 +1077,28 @@ def dataRepeatCheck():
                     input("[!]輸入有誤，請輸入正確的保留版本編號")
             temp = repeateID_Dict[selectFromRepeat]
             selectedList.append(temp)
-            print(
-                f"[*]\t保存的版本:\n[*]\t{selectFromRepeat}. 姓名: {temp.name}\t身分證字號: {temp.id}\t生日: {temp.birthday}\t電話: {temp.phone}\t餐食: {temp.foodType}\t特殊需求: {temp.specialNeeds}\t暱稱: {temp.nickName}\t旅遊天數: {temp.travelDays}\t身心障礙: {temp.disability}"
-            )
+            if disability_switch:
+                print(
+                    f"[*]\t保存的版本:\n[*]\t{selectFromRepeat}. 姓名: {temp.name}\t身分證字號: {temp.id}\t生日: {temp.birthday}\t電話: {temp.phone}\t餐食: {temp.foodType}\t特殊需求: {temp.specialNeeds}\t暱稱: {temp.nickName}\t旅遊天數: {temp.travelDays}\t身心障礙: {temp.disability}"
+                )
+            else:
+                print(
+                    f"[*]\t保存的版本:\n[*]\t{selectFromRepeat}. 姓名: {temp.name}\t身分證字號: {temp.id}\t生日: {temp.birthday}\t電話: {temp.phone}\t餐食: {temp.foodType}\t特殊需求: {temp.specialNeeds}\t暱稱: {temp.nickName}\t旅遊天數: {temp.travelDays}"
+                )
             print("[-]")
             input("[*]請按 Enter鍵 繼續選取...")
             print("[-]")
         clearConsole()
         print("[*]以下為最終選取的保留版本:")
         for selected in selectedList:
-            print(
-                f"[*]姓名: {selected.name}\t身分證字號: {selected.id}\t生日: {selected.birthday}\t電話: {selected.phone}\t餐食: {selected.foodType}\t特殊需求: {selected.specialNeeds}\t暱稱: {selected.nickName}\t旅遊天數: {selected.travelDays}\t身心障礙: {selected.disability}"
-            )
+            if disability_switch:
+                print(
+                    f"[*]姓名: {selected.name}\t身分證字號: {selected.id}\t生日: {selected.birthday}\t電話: {selected.phone}\t餐食: {selected.foodType}\t特殊需求: {selected.specialNeeds}\t暱稱: {selected.nickName}\t旅遊天數: {selected.travelDays}\t身心障礙: {selected.disability}"
+                )
+            else:
+                print(
+                    f"[*]姓名: {selected.name}\t身分證字號: {selected.id}\t生日: {selected.birthday}\t電話: {selected.phone}\t餐食: {selected.foodType}\t特殊需求: {selected.specialNeeds}\t暱稱: {selected.nickName}\t旅遊天數: {selected.travelDays}"
+                )
         reChoose = input("[*]如果要重新選擇，請輸入「re」，如果確認要使用上述資料作為最新資料，直接按「Enter鍵」繼續")
         if reChoose != "re":
             break
@@ -1032,8 +1115,8 @@ def dataRepeatCheck():
             )
             conn.commit()
             # re:ADD
-            repeateChecker.execute(
-                insertCommand(
+            if disability_switch:
+                command = insertCommand(
                     listFrom="會員資料",
                     key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
                     value=(
@@ -1046,9 +1129,24 @@ def dataRepeatCheck():
                         client.nickName,
                         client.travelDays,
                         client.disability
-                    ),
+                    )
                 )
-            )
+            else:
+                command = insertCommand(
+                    listFrom="會員資料",
+                    key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
+                    value=(
+                        client.name,
+                        client.id,
+                        client.birthday,
+                        client.phone,
+                        client.foodType,
+                        client.specialNeeds,
+                        client.nickName,
+                        client.travelDays
+                    )
+                )
+            repeateChecker.execute(insertCommand(command))
             conn.commit()
             print(f"[*]{client.name} 資料已更新 ")
         repeateChecker.execute("SELECT `身分證字號` FROM `會員資料` WHERE 1")
@@ -1156,7 +1254,10 @@ def overview():
         elif typeChoose == 3:
             foodType_overview()
         elif typeChoose == 4:
-            disability_overview()
+            if disability_switch:
+                disability_overview()
+            else:
+                print("[!]目前版本已關閉身心障礙手冊功能，若要使用此功能請申請開啟身心障礙手冊之版本")
         elif typeChoose == 5:
             discountCode_overview()
 
@@ -1325,6 +1426,11 @@ def connect_sql_server():
         loginSuccess = False
 
 if __name__ == "__main__":
+    # Optional Switch
+        # 2019.09.07 updates: 身心障礙手冊功能開關(Boolean)，決定後續所有功能是否開啟身心障礙手冊相關功能
+    global disability_switch
+    disability_switch = False
+
     # <----- System setting config start ----->
     if not config.check_config_if_exist(path=f"{os.getcwd()}\\config.ini"):
         print("[!]警告: 系統找不到 config.ini")
