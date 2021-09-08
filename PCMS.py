@@ -32,7 +32,7 @@ import package.config as config
 from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand, countCommand, searchCommand_sp
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.6.0"
+programVersion = "版本: " + "5.6.1"
 
 class Client:
     def __init__(self) -> None:
@@ -728,10 +728,10 @@ def discountCode_Manager():
     print("[*]================模式選擇=================")
     print("[*]          1. 產生旅遊金序號")
     print("[*]          2. 銷毀旅遊金序號")
-    print("[*]========================================")
-    mode = input("[?]請選擇要執行的功能(輸入編號): ")
+    print("[*]========================================")   
 
     while True:
+        mode = input("[?]請選擇要執行的功能(輸入編號): ")
         if mode in {"1", "2"}:
             break
         else:
@@ -748,8 +748,17 @@ def discountCode_Manager():
     scrapper = conn.cursor()
     scrapper.execute(searchCommand(listFrom="旅遊金序號", key="序號", searchBy=codeToScrapped))
     response = scrapper.fetchall()
+
+    # 2021.09.08 fixed
+    if len(response) == 0:
+        print(f"[!]警告: 序號({codeToScrapped})不存在，請確認輸入的序號是正確的 !")
+        print("[*]請確認序號的格式為: 身分證字號9碼數字 + 序號金鑰 + 序號面額")
+        print("[*]備註: 若為旅行社發行序號為Pinkbird開頭")
+        return
+
     if len(response) != 1:
-        print("[!]警告: 資料庫中有超過一組此序號")  # 理論上不會發生 這是以防萬一
+        # 理論上不會發生
+        print("[!]警告: 資料庫中有超過一組此序號")
 
     if response[0][2] == 1:
         print("[!]此序號已被兌換過了，建議保存已兌換過之序號，以便日後追蹤。")
@@ -1173,6 +1182,14 @@ def dataRepeatCheck():
 
 def open_phpMyAdmin():
     print("[*]===============================================")
+    # 2021.09.08 update
+    print("[*]由於接下來的操作涉及多項管理功能，如要繼續操作需要進行第二次認證。")
+    if input("[?}請輸入管理員密碼: ") != "pinkbird0932621621pinkbird":
+        print("[!]管理員密碼錯誤!")
+        return
+    else:
+        clearConsole()
+        print("[*]===============================================")
     phpMyAdmin_link = "http://" + db_settings["host"] + "/phpMyAdmin"
     webbrowser.open_new(phpMyAdmin_link)
     print("[*]已於預設瀏覽器中開啟: 網頁版管理介面(phpMyAdmin)")
@@ -1403,7 +1420,16 @@ def discountCode_overview():
     print("[*]" + "="*40)
 
 
+def change_disability_functions():
+    # 2021.09.08 update
+    print("[*]===============================================")
+    global disability_switch
+    t = disability_switch
+    disability_switch = not disability_switch
+    print(f"[*]已將身心障礙開關由 {t} 改為 {disability_switch}")
+
 functionDefined = {
+    # 一般指令
     "1": registeForm_processing,
     "2": discountCode_Manager,
     "3": editClientProfile,
@@ -1411,9 +1437,11 @@ functionDefined = {
     "5": dataRepeatCheck,
     "6": open_phpMyAdmin,
     "7": overview,
-    # "i": open_github,
+    # "i": open_github,    
     "E": exit_pinkbird_system,
-    "e": exit_pinkbird_system
+    "e": exit_pinkbird_system,
+    # 進階指令
+    "changeDisabilityFunctions": change_disability_functions
 }
 
 def connect_sql_server():
@@ -1610,6 +1638,8 @@ if __name__ == "__main__":
             #     operationName_inChinese = "開啟GitHub"
             elif functionChoose in ("e", "E"):
                 operationName_inChinese = "結束系統"
+            else:
+                operationName_inChinese = functionChoose
 
             operationLog = (
                 f"{operationTime}\t{db_settings['user']}\t{operationName_inChinese}\n"
@@ -1625,10 +1655,10 @@ if __name__ == "__main__":
             print("\n[*]系統將回到主選單")
         finally:
             try:
-                if operationName_inChinese != "結束系統":
-                    input("[*]請按「Enter鍵」以繼續...")
-                else:
+                if operationName_inChinese == "結束系統":
                     input("[*]請按「Enter鍵」來結束程式...")
+                else:
+                    input("[*]請按「Enter鍵」以繼續...")
             except KeyboardInterrupt:
                 pass
             # 結束每階段任務後清除 Console
