@@ -21,22 +21,15 @@
     * [登入與操作紀錄](#log)
 * [版權聲明](#copyright)
 
-## 最新版本: 5.6.0
+## 最新版本: 5.6.1
 
-> Last update: 2021.09.07
-### 5.6.0
+> Last update: 2021.09.08
 ### What's New
- - 保險公司修正資料需求，改成不需要身心障礙手冊，此次改版將身心障礙手冊功能重新設計為開關制
-
-### 5.5.0
-### What's New
- - 新增: 加入 SQL 連線的 Timeout 機制
+ - 更動: 為phpMyAdmin開啟功能設定管理員權限
+ - 新增: 進階指令changeDisabilityFunctions
 
 ### Fixed
- - 修正: 遇到未註冊會員時的判斷與處理機制
-
-### Optimization
- - 加強: 資料分析功能
+ - 修正: 嘗試銷毀不存在之序號時的問題
 
 ## <a id="interface">操作介面</a>
  - 登入畫面
