@@ -5,7 +5,7 @@
 
 透過 Python 以及 MySQL 設計之企業客戶資料庫管理系統
  
- - [PCMS使用說明書](https://github.com/dec880126/Pinkbird-Client-Management-System/releases/download/5.6.1/PCMS_UG2111.pdf)
+ - [PCMS使用說明書下載](https://github.com/dec880126/Pinkbird-Client-Management-System/releases/download/5.6.1/PCMS_UG2111.pdf)
 
 
 
