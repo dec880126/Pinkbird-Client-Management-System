@@ -4,6 +4,8 @@
 <img src = 'https://user-images.githubusercontent.com/34447298/130364251-8e9b2dfb-299b-42f1-865a-1b8397831891.png' height=25% width=25%></img>
 
 透過 Python 以及 MySQL 設計之企業客戶資料庫管理系統
+ 
+ - [PCMS使用說明書](https://github.com/dec880126/Pinkbird-Client-Management-System/releases/download/5.6.1/PCMS_UG2111.pdf)
 
 
 
