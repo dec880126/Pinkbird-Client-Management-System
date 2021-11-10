@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 PINKBIRD CLIENT MANAGEMENT SYSTEM
 Copyright (c) 2021 CyuanHuang
@@ -32,7 +33,7 @@ import package.config as config
 from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand, countCommand, searchCommand_sp
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.6.1"
+programVersion = "版本: " + "5.6.2"
 
 class Client:
     def __init__(self) -> None:
@@ -103,7 +104,7 @@ def registeForm_processing():
     # <---------- departMode selecting end ---------->
 
     # <---------- reading xlsx start ---------->
-    filePath = input("[?]請將檔案拉到程式畫面中...")
+    filePath = input("[?]請將檔案拉到程式畫面中...").replace('"', "").removesuffix(" ")
     try:
         if departMode == 1:
             try:
@@ -197,6 +198,8 @@ def registeForm_processing():
     if departMode == 1:
         for idx in range(df.shape[0]):
             IDhere = df.at[idx, df.columns[0]]
+            if isinstance(IDhere, float):
+                continue
             attendClient_Dict[IDhere] = Client()
 
             # 順序為: 
@@ -224,6 +227,8 @@ def registeForm_processing():
     elif departMode == 2:
         for idx in range(df.shape[0]):
             IDhere = df.at[idx, df.columns[0]]
+            if isinstance(IDhere, float):
+                continue
             attendClient_Dict[IDhere] = Client()
 
             # 順序為:
@@ -271,9 +276,16 @@ def registeForm_processing():
             for idx, ID in enumerate(illegal_IDs):
                 print(f"[>]\t{idx+1}. 身份證字號: {ID} ")
             print("========================================================================================")
-
-            print("[*]請在確認完出團清單中的會員編號皆完成註冊後，再重新執行出團作業 ! ")
-            return
+            while True:
+                Is_Continue_Add_Client = input("[?]是否要直接新增會員資料？(y/n)? ")
+                if Is_Continue_Add_Client in ('Y', 'y'):
+                    for idx, ID in enumerate(illegal_IDs):
+                        print(f"[>]\t{idx+1}. 身份證字號: {ID} ")
+                        addClientProfile(ID)
+                    break
+                elif Is_Continue_Add_Client in ('N', 'n'):
+                    print("[*]請在確認完出團清單中的會員編號皆完成註冊後，再重新執行出團作業 ! ")
+                    return
 
                 
         clearConsole()
@@ -931,56 +943,66 @@ def editClientProfile():
     # <----- Write Operation Log end ----->
 
 
-def addClientProfile():
-    addClient = Client()
-    print("[*]===============================================")
-    addClient.name = input("[?]請輸入 客戶姓名: ")
-    addClient.id = input("[?]請輸入 身分證字號: ")
-    addClient.birthday = input("[?]請輸入 出生年月日: ")
-    addClient.phone = input("[?]請輸入 連絡電話: ")
-    addClient.foodType = input("[?]請輸入 餐食選項: ")
-    addClient.specialNeeds = input("[?]請輸入 特殊需求: ")
-    addClient.nickName = input("[?]請輸入 社群暱稱: ")
-    addClient.travelDays = 0  # 新進客戶預設為0
-    if disability_switch:
-        addClient.disability = input("[?]是否領有身心障礙手冊: ")
+def addClientProfile(clientID: None):
+    while True:
+        try:
+            addClient = Client()
+            if clientID is None:
+                print("[*]" + "".center(50, "="))
+                addClient.id = input("[?]請輸入 身分證字號: ")
+            else:
+                print("[*]" + f"身分證字號： {clientID}".center(50, "="))
+            addClient.name = input("[?]請輸入 客戶姓名: ")
+            addClient.birthday = input("[?]請輸入 出生年月日: ")
+            addClient.phone = input("[?]請輸入 連絡電話: ")
+            addClient.foodType = input("[?]請輸入 餐食選項: ")
+            addClient.specialNeeds = input("[?]請輸入 特殊需求: ")
+            addClient.nickName = input("[?]請輸入 社群暱稱: ")
+            addClient.travelDays = 0  # 新進客戶預設為0
+            if disability_switch:
+                addClient.disability = input("[?]是否領有身心障礙手冊: ")
+            
+            input("[?]請確認以上資料正確無誤後，按下 Enter 繼續，如有錯誤，請按「Ctrl + C」來重新輸入。")
 
-    editor = conn.cursor()
-    if disability_switch:
-        editor.execute(
-            insertCommand(
-                listFrom="會員資料",
-                key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
-                value=(
-                    addClient.name,
-                    addClient.id,
-                    addClient.birthday,
-                    addClient.phone,
-                    addClient.foodType,
-                    addClient.specialNeeds,
-                    addClient.nickName,
-                    addClient.travelDays,
-                    addClient.disability
-                ),
-            )
-        )
-    else:
-        editor.execute(
-            insertCommand(
-                listFrom="會員資料",
-                key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數"),
-                value=(
-                    addClient.name,
-                    addClient.id,
-                    addClient.birthday,
-                    addClient.phone,
-                    addClient.foodType,
-                    addClient.specialNeeds,
-                    addClient.nickName,
-                    addClient.travelDays
-                ),
-            )
-        )
+            editor = conn.cursor()
+            if disability_switch:
+                editor.execute(
+                    insertCommand(
+                        listFrom="會員資料",
+                        key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
+                        value=(
+                            addClient.name,
+                            addClient.id,
+                            addClient.birthday,
+                            addClient.phone,
+                            addClient.foodType,
+                            addClient.specialNeeds,
+                            addClient.nickName,
+                            addClient.travelDays,
+                            addClient.disability
+                        ),
+                    )
+                )
+            else:
+                editor.execute(
+                    insertCommand(
+                        listFrom="會員資料",
+                        key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數"),
+                        value=(
+                            addClient.name,
+                            addClient.id,
+                            addClient.birthday,
+                            addClient.phone,
+                            addClient.foodType,
+                            addClient.specialNeeds,
+                            addClient.nickName,
+                            addClient.travelDays
+                        ),
+                    )
+                )
+            break
+        except KeyboardInterrupt:
+            pass
     conn.commit()
     editor.execute(searchCommand(listFrom="會員資料", key="身分證字號", searchBy=addClient.id))
     newData = editor.fetchall()[0]
