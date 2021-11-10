@@ -198,6 +198,7 @@ def registeForm_processing():
     if departMode == 1:
         for idx in range(df.shape[0]):
             IDhere = df.at[idx, df.columns[0]]
+            # 排除excel檔中的空格狀況
             if isinstance(IDhere, float):
                 continue
             attendClient_Dict[IDhere] = Client()
@@ -227,6 +228,7 @@ def registeForm_processing():
     elif departMode == 2:
         for idx in range(df.shape[0]):
             IDhere = df.at[idx, df.columns[0]]
+            # 排除excel檔中的空格狀況
             if isinstance(IDhere, float):
                 continue
             attendClient_Dict[IDhere] = Client()
@@ -246,46 +248,51 @@ def registeForm_processing():
     # <---------- client class processing end ---------->
 
     try:
-        cursor = conn.cursor()
-        print(f"[-]正在向資料庫 {db_settings['database']} 請求資料")
+        while True:
+            cursor = conn.cursor()
+            print(f"[-]正在向資料庫 {db_settings['database']} 請求資料")
 
-        # 2021.09.04 fixed: 修正遇到未註冊會員時的判斷與處理機制
-        clientIDs = [client.id for client in attendClient_Dict.values()]
-        clientDatas = {}
-        illegal_IDs = []
+            # 2021.09.04 fixed: 修正遇到未註冊會員時的判斷與處理機制
+            clientIDs = [client.id for client in attendClient_Dict.values()]
+            clientDatas = {}
+            illegal_IDs = []
 
-        for step, ID in zip(track(clientIDs, description="[\]正在確認會員資料中"), clientIDs):
-            cursor.execute(
-                searchCommand(
-                    listFrom="會員資料",
-                    key="身分證字號",
-                    searchBy=ID,
+            for step, ID in zip(track(clientIDs, description="[\]正在確認會員資料中"), clientIDs):
+                cursor.execute(
+                    searchCommand(
+                        listFrom="會員資料",
+                        key="身分證字號",
+                        searchBy=ID,
+                    )
                 )
-            )
-            
-            clientDatas[ID] = cursor.fetchone()
+                
+                clientDatas[ID] = cursor.fetchone()
 
-            if clientDatas[ID] == None:                
-                illegal_IDs.append(ID)
-            time.sleep(0.005)
-        print("[*]確認完成 ! ")
+                if clientDatas[ID] == None:                
+                    illegal_IDs.append(ID)
+                time.sleep(0.005)
+            print("[*]確認完成 ! ")
 
-        if illegal_IDs:
-            print("========================================================================================")
-            print("[!]下列身份證字號並未在資料庫中 ! 可能是輸入錯誤或是尚未註冊")
-            for idx, ID in enumerate(illegal_IDs):
-                print(f"[>]\t{idx+1}. 身份證字號: {ID} ")
-            print("========================================================================================")
-            while True:
-                Is_Continue_Add_Client = input("[?]是否要直接新增會員資料？(y/n)? ")
-                if Is_Continue_Add_Client in ('Y', 'y'):
-                    for idx, ID in enumerate(illegal_IDs):
-                        print(f"[>]\t{idx+1}. 身份證字號: {ID} ")
-                        addClientProfile(ID)
-                    break
-                elif Is_Continue_Add_Client in ('N', 'n'):
-                    print("[*]請在確認完出團清單中的會員編號皆完成註冊後，再重新執行出團作業 ! ")
-                    return
+            # 確認無不存在之會員資料才繼續作業，否則進行會員資料補註冊
+            if not illegal_IDs:
+                break
+
+            if illegal_IDs:
+                print("========================================================================================")
+                print("[!]下列身份證字號並未在資料庫中 ! 可能是輸入錯誤或是尚未註冊")
+                for idx, ID in enumerate(illegal_IDs):
+                    print(f"[>]\t{idx+1}. 身份證字號: {ID} ")
+                print("========================================================================================")
+                while True:
+                    Is_Continue_Add_Client = input("[?]是否要直接新增會員資料？(y/n)? ")
+                    if Is_Continue_Add_Client in ('Y', 'y'):
+                        for idx, ID in enumerate(illegal_IDs):
+                            print(f"[>]\t{idx+1}. 身份證字號: {ID} ")
+                            addClientProfile(ID)
+                        break
+                    elif Is_Continue_Add_Client in ('N', 'n'):
+                        print("[*]請在確認完出團清單中的會員編號皆完成註冊後，再重新執行出團作業 ! ")
+                        return
 
                 
         clearConsole()
