@@ -23,15 +23,14 @@
     * [登入與操作紀錄](#log)
 * [版權聲明](#copyright)
 
-## 最新版本: 5.6.1
+## 最新版本: 5.6.2
 
-> Last update: 2021.09.08
-### What's New
- - 更動: 為phpMyAdmin開啟功能設定管理員權限
- - 新增: 進階指令changeDisabilityFunctions
-
+> Last update: 2021.11.10
 ### Fixed
- - 修正: 嘗試銷毀不存在之序號時的問題
+- 新增檔案出現非預期字元的自動處理機制
+- 修正excel有空欄的Bug處理
+- 新增當會員尚未註冊的即時註冊機制
+- 函數 addClientProfile 模組化以便上述第3點之功能調用
 
 ## <a id="interface">操作介面</a>
  - 登入畫面
