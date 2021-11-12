@@ -33,7 +33,7 @@ import package.config as config
 from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand, countCommand, searchCommand_sp
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.6.2"
+programVersion = "版本: " + "5.6.4"
 
 class Client:
     def __init__(self) -> None:
@@ -288,7 +288,7 @@ def registeForm_processing():
                     if Is_Continue_Add_Client in ('Y', 'y'):
                         for idx, ID in enumerate(illegal_IDs):
                             print(f"[>]\t{idx+1}. 身份證字號: {ID} ")
-                            addClientProfile(ID)
+                            addClientProfile(clientID=ID, disability_switch=True)
                         break
                     elif Is_Continue_Add_Client in ('N', 'n'):
                         print("[*]請在確認完出團清單中的會員編號皆完成註冊後，再重新執行出團作業 ! ")
@@ -950,7 +950,7 @@ def editClientProfile():
     # <----- Write Operation Log end ----->
 
 
-def addClientProfile(clientID: None):
+def addClientProfile(clientID = None, disability_switch = True):
     while True:
         try:
             addClient = Client()
