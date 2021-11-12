@@ -90,3 +90,6 @@ def searchCommand_sp(listfrom: str, column: str = None, condition_col: str = Non
         return f"SELECT `{column}` FROM `{listfrom}` WHERE 1"
 
     return f"SELECT `{column}` FROM `{listfrom}` WHERE `{condition_col}` = '{str(condition_value)}'"
+
+def getColumeNames(tableName: str):
+    return f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '{tableName}'"
