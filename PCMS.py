@@ -828,33 +828,6 @@ def discountCode_Manager():
 
 
 def editClientProfile():
-    editor = conn.cursor()
-    print("[*]===============================================")
-    clientID = input("[?]請輸入要更新資料的會員的身分證字號: ")
-    editor.execute(searchCommand(listFrom="會員資料", key="身分證字號", searchBy=clientID))
-    clientData = editor.fetchone()
-    
-    try:
-        if disability_switch:
-            preData = f"姓名: {clientData[0]}    身分證字號: {clientData[1]}    生日: {clientData[2]}   電話: {clientData[3]}   餐食: {clientData[4]}   特殊需求: {clientData[5]}   社群暱稱: {clientData[6]}   身心障礙: {clientData[8]}"
-        else:
-            preData = f"姓名: {clientData[0]}    身分證字號: {clientData[1]}    生日: {clientData[2]}   電話: {clientData[3]}   餐食: {clientData[4]}   特殊需求: {clientData[5]}   社群暱稱: {clientData[6]}"
-    except TypeError:
-        print(f"[!]資料庫中無 身分證字號: {clientID} 對應之資料")
-        return
-    print(
-        "[*]======================================================客戶目前資料======================================================="
-    )
-    print("[>]" + preData)
-    print(
-        "[*]========================================================================================================================"
-    )
-    print("[*]如果只是要查詢會員資料請在確認完會員資料後輸入「e」即可")
-    if disability_switch:
-        print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    8.身心障礙    delete: 刪除此筆會員資料    e: 不做任何操作")
-    else:
-        print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    delete: 刪除此筆會員資料    e: 不做任何操作")
-
     editMode_Dict = {
         "1": "姓名",
         "2": "身分證字號",
@@ -865,12 +838,61 @@ def editClientProfile():
         "7": "暱稱",
         "8": "身心障礙"
     }
-
+    editor = conn.cursor()
+    print("[*]" + '會員資料查詢(編輯)器'.center(50, '='))
+    for idx, col in editMode_Dict.items():
+        print('[*]' + f'{idx}. {col}')
     while True:
+        searchType = input('[?]要使用何種資料來索引?')
+        if searchType in editMode_Dict.keys():
+            break
+
+        print('[!]' + '請輸入正確的索引編號...')
+    searchKey = editMode_Dict[searchType]
+    searchValue = input(f"[?]請輸入要更新資料的會員的 {searchKey}: ")
+    editor.execute(searchCommand(listFrom="會員資料", key=searchKey, searchBy=searchValue))
+    clientData = editor.fetchall()
+    if len(clientData) == 0:
+        print(f"[!]資料庫中無 {searchKey}: {searchValue} 對應之資料")
+        return
+    elif len(clientData) > 1:
+        print('[!]' + f'資料庫中有 {len(clientData)} 筆 {searchKey} 為 {searchValue} 的資料')
+    
+    for idx, data in enumerate(clientData):
+        if disability_switch:
+            preData = f"姓名: {data[0]}    身分證字號: {data[1]}    生日: {data[2]}   電話: {data[3]}   餐食: {data[4]}   特殊需求: {data[5]}   社群暱稱: {data[6]}   身心障礙: {data[8]}"
+        else:
+            preData = f"姓名: {data[0]}    身分證字號: {data[1]}    生日: {data[2]}   電話: {data[3]}   餐食: {data[4]}   特殊需求: {data[5]}   社群暱稱: {data[6]}"
+        print('[*]' + f'{idx + 1}. {searchKey}: {searchValue} 的會員資料'.center(80, '='))
+        print("[>]" + preData)
+        print('[*]' + ''.center(80, '='))
+    print("[*]如果只是要查詢會員資料請在確認完會員資料後直接按下 Enter 即可")
+    if disability_switch:
+        print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    8.身心障礙    delete: 刪除此筆會員資料")
+    else:
+        print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    delete: 刪除此筆會員資料")
+
+    print('[*]' + ''.center(80, '='))
+    while True:
+        if len(clientData) > 1:
+            try:
+                print('[!]' + '按下「Ctrl + C」可取消作業回到主畫面')
+                select_data_to_edit = int(input("[?]請選擇要編輯的資料對象: "))
+                if select_data_to_edit in range(1, len(clientData)+1):
+                    select_data_to_edit = select_data_to_edit - 1
+                else:
+                    print('[!]' + f'請輸入正確的索引編號(1~{len(clientData)})...')
+            except ValueError:
+                print('[!]' + f'請輸入正確的索引編號(1~{len(clientData)})...')
+        else:
+            select_data_to_edit = 0
         editMode = input("[?]請選擇要編輯的項目: ")
-        if editMode in ("e", "E"):
+
+        ID_of_edit_target = clientData[select_data_to_edit][1]
+
+        if editMode == "":
             print("[!]已取消編輯...")
-            return 0
+            return
         elif editMode in ("1", "2", "3", "4", "5", "6", "7", "8", "delete"):
             if editMode == "8" and not disability_switch:
                 print('[!]請重新輸入「編輯選項」中的選項...')
@@ -882,16 +904,16 @@ def editClientProfile():
 
     if editMode == "delete":
         while True:
-            deleteCheck = input(f"[!]確定要刪除「{clientID}」的會員資料嗎(Y/N)? ")
+            deleteCheck = input(f"[!]確定要刪除「{searchValue}」的會員資料嗎(Y/N)? ")
             if deleteCheck in ("y", "Y"):
                 editor.execute(
-                    deleteCommand(listFrom="會員資料", key="身分證字號", value=clientID)
+                    deleteCommand(listFrom="會員資料", key=searchKey, value=searchValue)
                 )
                 conn.commit()
-                print(f"[*]已刪除 {clientID} 的會員資料")
+                print(f"[*]已刪除 {searchValue} 的會員資料")
                 break
             elif deleteCheck in ("n", "N"):
-                print(f"[!]已取消刪除 {clientID} 的會員資料")
+                print(f"[!]已取消刪除 {searchValue} 的會員資料")
                 return 0
     else:
         newValue = input(f"[?]請問要將「{editMode_Dict[editMode]}」改為(請輸入欲更新之資料內容)? ")
@@ -901,16 +923,16 @@ def editClientProfile():
                 listFrom="會員資料",
                 key_toUpdate=editMode_Dict[editMode],
                 value_toUpdate=newValue,
-                searchBy_key="身分證字號",
-                searchBy_value=clientID,
+                searchBy_key='身分證字號',
+                searchBy_value=ID_of_edit_target,
             )
         )
         conn.commit()
 
         if editMode == "2":
-            clientID = newValue
+            searchValue = newValue
 
-        editor.execute(searchCommand(listFrom="會員資料", key="身分證字號", searchBy=clientID))
+        editor.execute(searchCommand(listFrom="會員資料", key='身分證字號', searchBy=ID_of_edit_target))
         clientDataNew = editor.fetchone()
         print(
             "[*]======================================================更新後的資料======================================================="
@@ -944,7 +966,7 @@ def editClientProfile():
         operationLog = f"   >編輯後資料:\n   {output}\n"
         config.write_config(path=operationConfigPath, content=operationLog)
     elif editMode == "delete":
-        operationLog = f"   編輯時間: {operationTime}\n   >刪除了 {clientID} 的會員資料\n"
+        operationLog = f"   編輯時間: {operationTime}\n   >刪除了 {searchValue} 的會員資料\n"
 
         config.write_config(path=operationConfigPath, content=operationLog)
     # <----- Write Operation Log end ----->
@@ -1046,7 +1068,7 @@ def addClientProfile(clientID = None, disability_switch = True):
     # <----- Write Operation Log end ----->
 
 
-def dataRepeatCheck():
+def dataRepeatCheck(disability_switch = True):
     print("[*]===============================================")
     repeateID_Dict = {}
     selectedList = []
