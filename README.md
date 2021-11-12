@@ -23,22 +23,29 @@
     * [登入與操作紀錄](#log)
 * [版權聲明](#copyright)
 
-## 最新版本: 5.7.0
+## 最新版本: 5.6.4
 
 > Last update: 2021.11.12
-### Fixed v5.7.0
+### v5.7.0-dev Fixed 
  - 修正無法手動新增會員資料之問題
  - 修正資料庫重複處理之問題
+ - editClientProfile重構
   
-### Fixed v5.6.4
+### v5.6.4 Fixed 
  - 修正新增會員資料錯誤問題
 
-### Fixed v5.6.3
+### v5.6.3 Fixed 
 - 新增檔案出現非預期字元的自動處理機制
 - 修正excel有空欄的Bug處理
 - 新增當會員尚未註冊的即時註冊機制
 - 函數 addClientProfile 模組化以便上述第3點之功能調用
 - 補登會員資料庫後，新增再次確認會員資料是否存在的保險機制。
+
+## To-Do List
+- Solve bugs in v5.7.0-dev
+- Record operation log in SQL Server
+- Automatically Backup solution for SQL Server in Python
+
 
 ## <a id="interface">操作介面</a>
  - 登入畫面
