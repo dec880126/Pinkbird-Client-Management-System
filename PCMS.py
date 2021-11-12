@@ -30,10 +30,10 @@ from rich.progress import track
 # ? Packages
 import package.year_cal as year_cal
 import package.config as config
-from package.sql_command import searchCommand, deleteCommand, insertCommand, editCommand, countCommand, searchCommand_sp
+from package.sql_command import *
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.6.4"
+programVersion = "版本: " + "5.7.0-dev"
 
 class Client:
     def __init__(self) -> None:
@@ -828,24 +828,37 @@ def discountCode_Manager():
 
 
 def editClientProfile():
-    editMode_Dict = {
-        "1": "姓名",
-        "2": "身分證字號",
-        "3": "生日",
-        "4": "電話",
-        "5": "餐食",
-        "6": "特殊需求",
-        "7": "暱稱",
-        "8": "身心障礙"
-    }
     editor = conn.cursor()
+    editor.execute(
+        getColumeNames(tableName='會員資料')
+    )
+    columeNames = [colName[0] for colName in editor.fetchall()]
+    editMode_Dict = dict(zip(
+        [str(int(idx[0]) + 1) for idx in enumerate(columeNames)],
+        [key for key in columeNames]
+    ))
+    # editMode_Dict will be like below
+    # editMode_Dict = {
+    #     '1': '姓名', 
+    #     '2': '身分證字號', 
+    #     '3': '生日', 
+    #     '4': '電話', 
+    #     '5': '餐食', 
+    #     '6': '特殊需求', 
+    #     '7': '暱稱', 
+    #     '8': '旅遊天數', 
+    #     '9': '身心障礙'
+    # }
     print("[*]" + '會員資料查詢(編輯)器'.center(50, '='))
     for idx, col in editMode_Dict.items():
-        print('[*]' + f'{idx}. {col}')
+        print('[*]' + f'\t{idx}. {col}')
     while True:
         searchType = input('[?]要使用何種資料來索引?')
-        if searchType in editMode_Dict.keys():
-            break
+        try:
+            if searchType in editMode_Dict.keys():
+                break
+        except IndexError:
+            print('[!]請輸入數字編號！')
 
         print('[!]' + '請輸入正確的索引編號...')
     searchKey = editMode_Dict[searchType]
@@ -858,20 +871,19 @@ def editClientProfile():
     elif len(clientData) > 1:
         print('[!]' + f'資料庫中有 {len(clientData)} 筆 {searchKey} 為 {searchValue} 的資料')
     
-    for idx, data in enumerate(clientData):
-        if disability_switch:
-            preData = f"姓名: {data[0]}    身分證字號: {data[1]}    生日: {data[2]}   電話: {data[3]}   餐食: {data[4]}   特殊需求: {data[5]}   社群暱稱: {data[6]}   身心障礙: {data[8]}"
-        else:
-            preData = f"姓名: {data[0]}    身分證字號: {data[1]}    生日: {data[2]}   電話: {data[3]}   餐食: {data[4]}   特殊需求: {data[5]}   社群暱稱: {data[6]}"
-        print('[*]' + f'{idx + 1}. {searchKey}: {searchValue} 的會員資料'.center(80, '='))
-        print("[>]" + preData)
-        print('[*]' + ''.center(80, '='))
-    print("[*]如果只是要查詢會員資料請在確認完會員資料後直接按下 Enter 即可")
-    if disability_switch:
-        print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    8.身心障礙    delete: 刪除此筆會員資料")
-    else:
-        print("[*]可編輯選項: 1.姓名    2.身分證字號    3.生日    4.電話    5.餐食    6.特殊需求    7.社群暱稱    delete: 刪除此筆會員資料")
+    for idx in range(len(clientData)):
+        print('[*]' + f' {idx + 1}. {searchKey}: {searchValue} 的會員資料'.center(80, '='))
+        print('[*]', end='')
+        for key, value in editMode_Dict.items():
+            print(f'{value}: {clientData[idx][int(key) - 1]}', end='\t')
 
+        print('\n[*]' + ''.center(80, '='))
+    print("[*]如果只是要查詢會員資料請在確認完會員資料後直接按下 Enter 即可")
+    print("[*]可編輯選項: ")
+    for idx, key in enumerate(editMode_Dict.values()):
+        print('[*]' + f'\t{idx + 1}. {key}')
+    else:
+        print('[*]' + 'delete: 刪除此筆會員資料')
     print('[*]' + ''.center(80, '='))
     while True:
         if len(clientData) > 1:
@@ -882,10 +894,15 @@ def editClientProfile():
                     select_data_to_edit = select_data_to_edit - 1
                 else:
                     print('[!]' + f'請輸入正確的索引編號(1~{len(clientData)})...')
+                    continue
             except ValueError:
                 print('[!]' + f'請輸入正確的索引編號(1~{len(clientData)})...')
+                continue
         else:
             select_data_to_edit = 0
+        print('[*]' + '')
+        for key, value in editMode_Dict.items():
+            print(f'{value}: {clientData[select_data_to_edit][int(key) - 1]}', end='\t')
         editMode = input("[?]請選擇要編輯的項目: ")
 
         ID_of_edit_target = clientData[select_data_to_edit][1]
@@ -893,10 +910,7 @@ def editClientProfile():
         if editMode == "":
             print("[!]已取消編輯...")
             return
-        elif editMode in ("1", "2", "3", "4", "5", "6", "7", "8", "delete"):
-            if editMode == "8" and not disability_switch:
-                print('[!]請重新輸入「編輯選項」中的選項...')
-                continue
+        elif editMode in editMode_Dict.keys() or editMode == 'delete':
             break
         else:
             print('[!]請重新輸入「編輯選項」中的選項...')
@@ -907,7 +921,7 @@ def editClientProfile():
             deleteCheck = input(f"[!]確定要刪除「{searchValue}」的會員資料嗎(Y/N)? ")
             if deleteCheck in ("y", "Y"):
                 editor.execute(
-                    deleteCommand(listFrom="會員資料", key=searchKey, value=searchValue)
+                    deleteCommand(listFrom="會員資料", key='身分證字號', value=ID_of_edit_target)
                 )
                 conn.commit()
                 print(f"[*]已刪除 {searchValue} 的會員資料")
@@ -981,6 +995,7 @@ def addClientProfile(clientID = None, disability_switch = True):
                 addClient.id = input("[?]請輸入 身分證字號: ")
             else:
                 print("[*]" + f"身分證字號： {clientID}".center(50, "="))
+                addClient.id = clientID
             addClient.name = input("[?]請輸入 客戶姓名: ")
             addClient.birthday = input("[?]請輸入 出生年月日: ")
             addClient.phone = input("[?]請輸入 連絡電話: ")
@@ -1076,9 +1091,16 @@ def dataRepeatCheck(disability_switch = True):
     reader = conn.cursor()
     repeateChecker.execute("select * from `會員資料` group by `身分證字號` having count(*) > 1")
     response = repeateChecker.fetchall()
+    
     if len(response) == 0:
         print("[!]會員資料庫目前無重複資料")
         return
+    
+    repeateChecker.execute(
+        getColumeNames(tableName='會員資料')
+    )
+    columeNames = tuple([colName[0] for colName in repeateChecker.fetchall()])
+    
     while True:
         print("[*]以下為重複會員資料之名單::")
         for clientRepeat in response:
@@ -1498,11 +1520,15 @@ functionDefined = {
 def connect_sql_server():
     global loginSuccess
     try:
+        global is_IP_allow
         global conn
         conn = pymysql.connect(**db_settings)
         loginSuccess = True
     except pymysql.err.OperationalError:
         loginSuccess = False
+        is_IP_allow = True
+    except pymysql.err.InternalError:
+        is_IP_allow = False
 
 if __name__ == "__main__":
     # Optional Switch
@@ -1571,10 +1597,13 @@ if __name__ == "__main__":
                     break
             
             loginTime = datetime.datetime.now()
-            login_threading.join()            
+            login_threading.join()   
             
             if not loginSuccess:
-                raise pymysql.err.OperationalError
+                if is_IP_allow:
+                    raise pymysql.err.OperationalError
+                else:
+                    raise pymysql.err.InternalError
             print(f"[*]資料庫: {db_settings['database']} 連線成功!")
             loginSuccess = True
             timeout_check = False
@@ -1590,6 +1619,11 @@ if __name__ == "__main__":
                 continue
             else:
                 exit_pinkbird_system()
+        except pymysql.err.InternalError:
+            print('[!]' + '此電腦的 IP 不在資料庫允許的連線清單內，請將IP加入允許連線清單後再重新登入。')
+            input('[!]' + '請按Enter來結束程式...')
+            sys.exit()
+
         except TimeoutError:
             print("[!]連線逾時... 請檢查網路相關設定 !")
             # <----- Write Login Log start ----->
