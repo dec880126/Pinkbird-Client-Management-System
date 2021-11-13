@@ -33,7 +33,7 @@ import package.config as config
 from package.sql_command import *
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.6.5"
+programVersion = "版本: " + "5.6.6"
 
 class Client:
     def __init__(self) -> None:
@@ -505,14 +505,12 @@ def registeForm_processing():
         if departMode == 1:
             df = xlsx_DataFrame(
                 clientList=attendClient_Dict.values(),
-                mode="excluding_roomType",
-                disability=disability_switch
+                mode="excluding_roomType"
             )
         elif departMode == 2:
             df = xlsx_DataFrame(
                 clientList=attendClient_Dict.values(),
-                mode="including_roomType",
-                disability=disability_switch
+                mode="including_roomType"
             )
         print("[*]======================================================================")
         print(df)
