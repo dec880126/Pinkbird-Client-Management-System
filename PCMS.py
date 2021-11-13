@@ -33,7 +33,7 @@ import package.config as config
 from package.sql_command import *
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.7.0-dev"
+programVersion = "版本: " + "5.6.5"
 
 class Client:
     def __init__(self) -> None:
@@ -829,39 +829,19 @@ def discountCode_Manager():
 
 def editClientProfile():
     editor = conn.cursor()
-    editor.execute(
-        getColumeNames(tableName='會員資料')
-    )
-    columeNames = [colName[0] for colName in editor.fetchall()]
-    editMode_Dict = dict(zip(
-        [str(int(idx[0]) + 1) for idx in enumerate(columeNames)],
-        [key for key in columeNames]
-    ))
-    # editMode_Dict will be like below
-    # editMode_Dict = {
-    #     '1': '姓名', 
-    #     '2': '身分證字號', 
-    #     '3': '生日', 
-    #     '4': '電話', 
-    #     '5': '餐食', 
-    #     '6': '特殊需求', 
-    #     '7': '暱稱', 
-    #     '8': '旅遊天數', 
-    #     '9': '身心障礙'
-    # }
     print("[*]" + '會員資料查詢(編輯)器'.center(50, '='))
-    for idx, col in editMode_Dict.items():
+    for idx, col in column_Dict.items():
         print('[*]' + f'\t{idx}. {col}')
     while True:
         searchType = input('[?]要使用何種資料來索引?')
         try:
-            if searchType in editMode_Dict.keys():
+            if searchType in column_Dict.keys():
                 break
         except IndexError:
             print('[!]請輸入數字編號！')
 
         print('[!]' + '請輸入正確的索引編號...')
-    searchKey = editMode_Dict[searchType]
+    searchKey = column_Dict[searchType]
     searchValue = input(f"[?]請輸入要更新資料的會員的 {searchKey}: ")
     editor.execute(searchCommand(listFrom="會員資料", key=searchKey, searchBy=searchValue))
     clientData = editor.fetchall()
@@ -874,13 +854,14 @@ def editClientProfile():
     for idx in range(len(clientData)):
         print('[*]' + f' {idx + 1}. {searchKey}: {searchValue} 的會員資料'.center(80, '='))
         print('[*]', end='')
-        for key, value in editMode_Dict.items():
+        for key, value in column_Dict.items():
             print(f'{value}: {clientData[idx][int(key) - 1]}', end='\t')
 
-        print('\n[*]' + ''.center(80, '='))
+        print('\n')
+    print('[*]' + ''.center(80, '='))
     print("[*]如果只是要查詢會員資料請在確認完會員資料後直接按下 Enter 即可")
     print("[*]可編輯選項: ")
-    for idx, key in enumerate(editMode_Dict.values()):
+    for idx, key in enumerate(column_Dict.values()):
         print('[*]' + f'\t{idx + 1}. {key}')
     else:
         print('[*]' + 'delete: 刪除此筆會員資料')
@@ -900,17 +881,17 @@ def editClientProfile():
                 continue
         else:
             select_data_to_edit = 0
-        print('[*]' + '')
-        for key, value in editMode_Dict.items():
+        print('[*]', end='')
+        for key, value in column_Dict.items():
             print(f'{value}: {clientData[select_data_to_edit][int(key) - 1]}', end='\t')
-        editMode = input("[?]請選擇要編輯的項目: ")
+        editMode = input("\n[?]請選擇要編輯的項目: ")
 
         ID_of_edit_target = clientData[select_data_to_edit][1]
 
         if editMode == "":
             print("[!]已取消編輯...")
             return
-        elif editMode in editMode_Dict.keys() or editMode == 'delete':
+        elif editMode in column_Dict.keys() or editMode == 'delete':
             break
         else:
             print('[!]請重新輸入「編輯選項」中的選項...')
@@ -930,12 +911,37 @@ def editClientProfile():
                 print(f"[!]已取消刪除 {searchValue} 的會員資料")
                 return 0
     else:
-        newValue = input(f"[?]請問要將「{editMode_Dict[editMode]}」改為(請輸入欲更新之資料內容)? ")
+        while True:
+            newValue = input(f"[?]請問要將「{column_Dict[editMode]}」改為(請輸入欲更新之資料內容)? ")
+            if newValue == '':
+                is_continue = input('[!]尚未輸入內容，要繼續編輯請輸入「Y」，否則按「Enter」來取消編輯。') in ('Y', 'y')
+                if is_continue:
+                    continue
+                elif is_continue == '':
+                    print('[!]已取消編輯！')
+                    return
+
+            if column_Dict[editMode] == '生日':
+                bithday = newValue.split(".")
+
+                try:
+                    datetime.date(
+                        year=int(bithday[0]),
+                        month=int(bithday[1]),
+                        day=int(bithday[2]),
+                    ).strftime("%Y.%m.%d")
+                except IndexError:
+                    print("[!]日期輸入格式錯誤，格式為（YYYY.MM.DD），例如：2021.01.01。")
+                    continue
+                except ValueError:
+                    print("[!]日期輸入格式錯誤，格式為（YYYY.MM.DD），例如：2021.01.01。")
+                    continue
+            break
 
         editor.execute(
             editCommand(
                 listFrom="會員資料",
-                key_toUpdate=editMode_Dict[editMode],
+                key_toUpdate=column_Dict[editMode],
                 value_toUpdate=newValue,
                 searchBy_key='身分證字號',
                 searchBy_value=ID_of_edit_target,
@@ -973,6 +979,9 @@ def editClientProfile():
         config.make_config(operationConfigPath, configMode=3)
 
     if editMode != "delete":
+        preData = ''
+        for idx, value in enumerate(column_Dict.values()):
+            preData += f'{value}: {clientDataNew[idx]}\t'
         operationLog = f"   編輯時間: {operationTime}\n   >編輯前資料:\n   {preData}\n"
 
         config.write_config(path=operationConfigPath, content=operationLog)
@@ -1344,14 +1353,11 @@ def overview():
         elif typeChoose == 3:
             foodType_overview()
         elif typeChoose == 4:
-            if disability_switch:
-                disability_overview()
-            else:
-                print("[!]目前版本已關閉身心障礙手冊功能，若要使用此功能請申請開啟身心障礙手冊之版本")
+            disability_overview(disability_switch=True)
         elif typeChoose == 5:
             discountCode_overview()
 
-        os.system("pause")
+        input('[*]請按「Enter」以繼續。')
     
 
 def foodType_overview():
@@ -1404,7 +1410,10 @@ def ages_overview():
     print(f"[*]資料庫總人數為 {amount_of_clients} 人，平均 {total_age/amount_of_clients: 2.2f} 歲")
 
 
-def disability_overview():
+def disability_overview(disability_switch: bool):
+    if not disability_switch:
+        print("[!]目前版本已關閉身心障礙手冊功能，若要使用此功能請申請開啟身心障礙手冊之版本")
+        return
     command_base = "SELECT COUNT(*) FROM `會員資料` WHERE `身心障礙` LIKE "
     with conn.cursor() as cur:
         cur.execute(countCommand("會員資料"))
@@ -1501,6 +1510,23 @@ def change_disability_functions():
     disability_switch = not disability_switch
     print(f"[*]已將身心障礙開關由 {t} 改為 {disability_switch}")
 
+
+def list_all_ClientData():
+    db_Name = '會員資料'
+    result = sql_operator(
+        connect=conn,
+        instruction=f'SELECT * FROM `{db_Name}`',
+        is_fetchAll=True
+    )
+
+    for idx, data in enumerate(result):
+        printData = ''
+        for colName, col in zip(column_Dict.values(), data):
+            printData += f'{colName}: {col}\t'
+        print(f'[*] {int(idx) + 1}. {printData}')
+
+
+
 functionDefined = {
     # 一般指令
     "1": registeForm_processing,
@@ -1510,6 +1536,7 @@ functionDefined = {
     "5": dataRepeatCheck,
     "6": open_phpMyAdmin,
     "7": overview,
+    "8": list_all_ClientData,
     # "i": open_github,    
     "E": exit_pinkbird_system,
     "e": exit_pinkbird_system,
@@ -1663,6 +1690,31 @@ if __name__ == "__main__":
                 config.write_config(path=configPath, content=loginLog)
                 # <----- Write Login Log end ----->
 
+    # <----- Get Column Name start ----->
+    corsor = conn.cursor()
+    corsor.execute(
+        getColumeNames(tableName='會員資料')
+    )
+    columeNames = [colName[0] for colName in corsor.fetchall()]
+    global column_Dict
+    column_Dict = dict(zip(
+        [str(int(idx[0]) + 1) for idx in enumerate(columeNames)],
+        [key for key in columeNames]
+    ))
+    # column_Dict will be like below
+    # column_Dict = {
+    #     '1': '姓名', 
+    #     '2': '身分證字號', 
+    #     '3': '生日', 
+    #     '4': '電話', 
+    #     '5': '餐食', 
+    #     '6': '特殊需求', 
+    #     '7': '暱稱', 
+    #     '8': '旅遊天數', 
+    #     '9': '身心障礙'
+    # }
+    # <----- Get Column Name End ----->
+
     # <----- Main Loop start ----->
     while True:
         print("[*]========================================")
@@ -1679,6 +1731,7 @@ if __name__ == "__main__":
         print("[*]" + "\t  5. 檢查會員資料是否重複")
         print("[*]" + "\t  6. 開啟網頁版管理介面")
         print("[*]" + "\t  7. 資料庫總覽")
+        print("[*]" + "\t  8. 查看所有會員資料（總覽）")
         print("[*]" + "\t  e. 離開系統")
         print("[*]" + "=" * 40)
         print("[*]在各功能介面中，隨時可以按下「Ctrl + C」回到此主選單介面")
@@ -1719,6 +1772,8 @@ if __name__ == "__main__":
                 operationName_inChinese = "開啟網頁版管理介面"
             elif functionChoose == "7":
                 operationName_inChinese = "資料庫總覽"
+            elif functionChoose == "8":
+                operationName_inChinese = "查看所有會員資料（總覽）"
             # elif functionChoose == "i":
             #     operationName_inChinese = "開啟GitHub"
             elif functionChoose in ("e", "E"):

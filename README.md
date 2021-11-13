@@ -23,10 +23,10 @@
     * [登入與操作紀錄](#log)
 * [版權聲明](#copyright)
 
-## 最新版本: 5.6.4
+## 最新版本: 5.6.5
 
 > Last update: 2021.11.12
-### v5.7.0-dev Fixed 
+### v5.6.5 Fixed 
  - 修正無法手動新增會員資料之問題
  - 修正資料庫重複處理之問題
  - editClientProfile重構
@@ -42,7 +42,7 @@
 - 補登會員資料庫後，新增再次確認會員資料是否存在的保險機制。
 
 ## To-Do List
-- Solve bugs in v5.7.0-dev
+- Solve bugs in v5.6.5-dev
 - Record operation log in SQL Server
 - Automatically Backup solution for SQL Server in Python
 

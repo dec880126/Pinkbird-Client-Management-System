@@ -9,6 +9,9 @@ FUNCTION LIBRARY OF SQL COMMAND
  - editCommand
  - countCommand
 """
+from pymysql.connections import Connection
+
+
 def searchCommand(listFrom: str, key: str, searchBy) -> str:
     """
     根據輸入列表，產生搜尋的SQL指令
@@ -93,3 +96,12 @@ def searchCommand_sp(listfrom: str, column: str = None, condition_col: str = Non
 
 def getColumeNames(tableName: str):
     return f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '{tableName}'"
+
+def sql_operator(connect: Connection, instruction: str, is_fetchAll: bool) -> tuple:
+    editor = connect.cursor()
+    editor.execute(instruction)
+
+    if is_fetchAll:
+        return editor.fetchall()
+    else:
+        return editor.fetchone()
