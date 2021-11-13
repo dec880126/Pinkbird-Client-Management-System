@@ -30,9 +30,6 @@
  - 修正無法手動新增會員資料之問題
  - 修正資料庫重複處理之問題
  - editClientProfile重構
- - Bug fixed(discribe in commit: b203039)
- - 新增sql_operator函數
- - 修正MacOS總覽無法正常顯示問題
   
 ### v5.6.4 Fixed 
  - 修正新增會員資料錯誤問題
