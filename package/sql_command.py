@@ -97,11 +97,36 @@ def searchCommand_sp(listfrom: str, column: str = None, condition_col: str = Non
 def getColumeNames(tableName: str):
     return f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '{tableName}'"
 
-def sql_operator(connect: Connection, instruction: str, is_fetchAll: bool) -> tuple:
+def sql_operator(connect: Connection, instruction: str, is_fetchAll: bool = False, is_commit: bool = False) -> tuple:
     editor = connect.cursor()
     editor.execute(instruction)
+
+    if is_commit:
+        connect.commit()
 
     if is_fetchAll:
         return editor.fetchall()
     else:
         return editor.fetchone()
+
+def writeLog(is_Success: bool, connect: Connection, writeList: str, key: tuple, value_success: tuple, value_failed: tuple,is_commit: bool = False):
+    if is_Success:
+        sql_operator(
+            connect=connect,
+            instruction=insertCommand(
+                listFrom=writeList,
+                key=key,
+                value=value_success
+            ),
+            is_commit=is_commit
+        )
+    else:
+        sql_operator(
+            connect=connect,
+            instruction=insertCommand(
+                listFrom=writeList,
+                key=key,
+                value=value_failed
+            ),
+            is_commit=is_commit
+        )
