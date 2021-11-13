@@ -1004,7 +1004,7 @@ def addClientProfile(clientID = None, disability_switch = True):
                 print("[*]" + f"身分證字號： {clientID}".center(50, "="))
                 addClient.id = clientID
             addClient.name = input("[?]請輸入 客戶姓名: ")
-            addClient.birthday = input("[?]請輸入 出生年月日: ")
+            addClient.birthday = input("[?]請輸入 出生年月日(民國曆/西元曆皆可): ")
             addClient.phone = input("[?]請輸入 連絡電話: ")
             addClient.foodType = input("[?]請輸入 餐食選項: ")
             addClient.specialNeeds = input("[?]請輸入 特殊需求: ")
