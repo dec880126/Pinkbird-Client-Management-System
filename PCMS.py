@@ -70,8 +70,7 @@ class Code:
         self.generateTime = generateTime
 
 class Endding(Exception):
-    def __init__(self):
-        sys.exit()
+    pass
 
 class WrongDepartTypeChoose(Exception):
     pass
@@ -1305,7 +1304,9 @@ def exit_pinkbird_system():
     except NameError:
         # 尚未成功連線就結束程式的狀況
         pass
-    print(f"[!]程式結束...  本次執行時間: {datetime.datetime.now()-loginTime}")
+    totalTime = str(datetime.datetime.now()-loginTime).split(':')
+    totalTime = f'{totalTime[0]}:{totalTime[1]}:{totalTime[2].split(".")[0]}'
+    print(f"[!]程式結束...  本次執行時間: {totalTime}")
     raise Endding
 
 
@@ -1544,9 +1545,18 @@ functionDefined = {
 
 def connect_sql_server():
     global loginSuccess
+    db_log_settings = {
+        "host": db_settings["host"],
+        "port": db_settings["port"],
+        "user": 'log_writer',
+        "password": 'Log-63397021',
+        "database": 'PCMS_LOG',
+        "charset": "utf8",
+    }
     try:
         global is_IP_allow
-        global conn
+        global conn, conn_log
+        conn_log = pymysql.connect(**db_log_settings)
         conn = pymysql.connect(**db_settings)
         loginSuccess = True
     except pymysql.err.OperationalError:
@@ -1575,15 +1585,17 @@ if __name__ == "__main__":
         sys.exit()
     configResult = config.load_config(path="./config.ini")
     # <----- System setting config end ----->
-
-    print("[*]========================================")
-    print("[*]" + "粉鳥旅行社會員資料庫管理系統".center(25))
-    print("[*]" + programVersion.center(35))
-    print("[*]========================================")
     loginSuccess = False
     retryLoginCount = 0
+    global db_settings
+
+    # 登入系統與Log紀錄
     while True:
-        global db_settings
+        clearConsole()
+        print("[*]========================================")
+        print("[*]" + "粉鳥旅行社會員資料庫管理系統".center(25))
+        print("[*]" + programVersion.center(35))
+        print("[*]========================================")
         # 資料庫參數設定
         db_settings = {
             "host": configResult["host"],
@@ -1602,9 +1614,12 @@ if __name__ == "__main__":
             login_start_time = datetime.datetime.now()
             timeout = 60
             timeout_check = True
+            is_exit = False
+            try:
+                retryLogin = 0
+            except NameError:
+                pass
             while True:
-                clearConsole()
-                print("[*]=================================================================================================")
                 print(f"[-]連接至資料庫 -> {db_settings['database']} 中, 路徑為: {db_settings['host']}:{db_settings['port']}")
                 
                 for step in track(range(300), description="[\]連線中...", ):
@@ -1639,11 +1654,7 @@ if __name__ == "__main__":
                 print("[!](看到這段訊息代表你嘗試登入失敗一次以上)如果確認帳號密碼輸入無錯誤，可能是網路連線上的設定問題，請連絡相關人員設定")
             retryLogin = input("[!]帳號或密碼有錯，請問是否要重新輸入，否則系統自動關閉(Y/N): ")
             loginSuccess = False
-            if retryLogin in ("y", "Y"):
-                retryLoginCount += 1
-                continue
-            else:
-                exit_pinkbird_system()
+            timeout_check = False
         except pymysql.err.InternalError:
             print('[!]' + '此電腦的 IP 不在資料庫允許的連線清單內，請將IP加入允許連線清單後再重新登入。')
             input('[!]' + '請按Enter來結束程式...')
@@ -1667,26 +1678,37 @@ if __name__ == "__main__":
             # <----- Write Login Log end ----->
             sys.exit()        
         finally:
+            msg_loginFail = f'第 {retryLoginCount+1} 次嘗試登入失敗'
+            if retryLogin in ("y", "Y"):
+                retryLoginCount += 1
+            elif retryLogin in ('n', 'N'):
+                is_exit = True
+            else:
+                pass
+
             if not timeout_check:
                 # 連線逾時的狀況下 loginTime is undefine
                 # <----- Write Login Log start ----->
-                configBasePath = f"{os.getcwd()}\\登入紀錄"
-                configPath = (
-                    configBasePath + "\\" + f"{loginTime.strftime('%Y-%m')}月份-登入紀錄.ini"
+                writeLog(
+                    is_Success=loginSuccess,
+                    connect=conn_log,
+                    writeList='登入記錄',
+                    key=('時間', '操作者', '狀態'),
+                    value_success=(
+                        f'{loginTime.strftime("%Y-%m-%d %H:%M:%S")}',
+                        db_settings['user'],
+                        '登入成功' 
+                    ),
+                    value_failed=(
+                        f'{loginTime.strftime("%Y-%m-%d %H:%M:%S")}',
+                        db_settings['user'],
+                        msg_loginFail
+                    ),
+                    is_commit=True
                 )
-                if not os.path.isdir(configBasePath):
-                    os.mkdir(configBasePath)
-
-                if not config.check_config_if_exist(configPath):
-                    config.make_config(configPath, configMode=2)
-
-                if loginSuccess:
-                    loginLog = f"{loginTime}\t{db_settings['user']}\t{'登入成功'}\n"
-                else:
-                    loginLog = f"{loginTime}\t{db_settings['user']}\t第 {retryLoginCount+1} 次嘗試登入失敗\n"
-
-                config.write_config(path=configPath, content=loginLog)
                 # <----- Write Login Log end ----->
+            if is_exit:
+                exit_pinkbird_system()
 
     # <----- Get Column Name start ----->
     corsor = conn.cursor()
@@ -1699,18 +1721,18 @@ if __name__ == "__main__":
         [str(int(idx[0]) + 1) for idx in enumerate(columeNames)],
         [key for key in columeNames]
     ))
-    # column_Dict will be like below
-    # column_Dict = {
-    #     '1': '姓名', 
-    #     '2': '身分證字號', 
-    #     '3': '生日', 
-    #     '4': '電話', 
-    #     '5': '餐食', 
-    #     '6': '特殊需求', 
-    #     '7': '暱稱', 
-    #     '8': '旅遊天數', 
-    #     '9': '身心障礙'
-    # }
+        # column_Dict will be like below
+        # column_Dict = {
+        #     '1': '姓名', 
+        #     '2': '身分證字號', 
+        #     '3': '生日', 
+        #     '4': '電話', 
+        #     '5': '餐食', 
+        #     '6': '特殊需求', 
+        #     '7': '暱稱', 
+        #     '8': '旅遊天數', 
+        #     '9': '身心障礙'
+        # }
     # <----- Get Column Name End ----->
 
     # <----- Main Loop start ----->
@@ -1743,19 +1765,6 @@ if __name__ == "__main__":
 
         try:
             # <----- Write Operation Log start ----->
-            operationTime = datetime.datetime.now()
-            operationConfigBasePath = f"{os.getcwd()}\\操作紀錄"
-            operationConfigPath = (
-                operationConfigBasePath
-                + "\\"
-                + f"{operationTime.strftime('%Y-%m')}月份操作紀錄.ini"
-            )
-            if not os.path.isdir(operationConfigBasePath):
-                os.mkdir(operationConfigBasePath)
-
-            if not config.check_config_if_exist(operationConfigPath):
-                config.make_config(operationConfigPath, configMode=3)
-
             if functionChoose == "1":
                 operationName_inChinese = "產生出團名冊"
             elif functionChoose == "2":
@@ -1779,16 +1788,41 @@ if __name__ == "__main__":
             else:
                 operationName_inChinese = functionChoose
 
-            operationLog = (
-                f"{operationTime}\t{db_settings['user']}\t{operationName_inChinese}\n"
+            operationTime = datetime.datetime.now()
+            operationLog = (str(operationTime), db_settings['user'], operationName_inChinese)
+            writeLog(
+                is_Success=True,
+                connect=conn_log,
+                writeList='操作記錄',
+                key=('時間', '操作者', '內容'),
+                value_success=operationLog,
+                value_failed=operationLog,
+                is_commit=True
             )
-
-            config.write_config(path=operationConfigPath, content=operationLog)
             # <----- Write Operation Log end ----->
 
             pinkbird_function(functionChoose, functionName=operationName_inChinese)
         except Endding:
-            pass
+            totalTime = str(datetime.datetime.now()-loginTime).split(':')
+            totalTime = f'{totalTime[0]}:{totalTime[1]}:{totalTime[2].split(".")[0]}'
+            writeLog(
+                is_Success=True,
+                connect=conn_log,
+                writeList='登入記錄',
+                key=('時間', '操作者', '狀態'),
+                value_success=(
+                    f'{loginTime.strftime("%Y-%m-%d %H:%M:%S")}',
+                    db_settings['user'],
+                    f'結束系統 總運行時間: {totalTime}' 
+                ),
+                value_failed=(
+                    f'{loginTime.strftime("%Y-%m-%d %H:%M:%S")}',
+                    db_settings['user'],
+                    f'結束系統 總運行時間: {datetime.datetime.now()-loginTime}'
+                ),
+                is_commit=True
+            )
+            sys.exit()
         except KeyboardInterrupt:
             print("\n[*]系統將回到主選單")
         finally:
