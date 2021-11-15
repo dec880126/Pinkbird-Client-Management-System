@@ -23,33 +23,19 @@
     * [登入與操作紀錄](#log)
 * [版權聲明](#copyright)
 
-## 最新版本: 5.6.6
+## 最新版本: 6.0.0
 
-> Last update: 2021.11.13
-### v5.6.6 Fixed
- - 修正出團模式中輸出xlsx錯誤之Bug
+> Last update: 2021.11.14
+### What's New in v6.0.0
 
-### v5.6.5 Fixed 
- - 修正無法手動新增會員資料之問題
- - 修正資料庫重複處理之問題
- - editClientProfile重構
- - Bug fixed(discribe in commit: b203039)
- - 新增sql_operator函數
- - 修正MacOS總覽無法正常顯示問題
-  
-### v5.6.4 Fixed 
- - 修正新增會員資料錯誤問題
-
-### v5.6.3 Fixed 
-- 新增檔案出現非預期字元的自動處理機制
-- 修正excel有空欄的Bug處理
-- 新增當會員尚未註冊的即時註冊機制
-- 函數 addClientProfile 模組化以便上述第3點之功能調用
-- 補登會員資料庫後，新增再次確認會員資料是否存在的保險機制。
+ - UI/UX優化
+ - LOG由本地紀錄改為雲端紀錄
+ - Config架構更改
 
 ## To-Do List
-- Record operation log in SQL Server
-- Automatically Backup solution for SQL Server in Python
+ - [x] Solve bugs in v5.7.0-dev
+ - [x] Record operation log in SQL Server
+ - [ ] Automatically Backup solution for SQL Server in Python
 
 
 ## <a id="interface">操作介面</a>
