@@ -1236,13 +1236,13 @@ def dataRepeatCheck(disability_switch = True):
 def open_phpMyAdmin():
     print("[*]===============================================")
     # 2021.09.08 update
-    print("[*]由於接下來的操作涉及多項管理功能，如要繼續操作需要進行第二次認證。")
-    if input("[?}請輸入管理員密碼: ") != "pinkbird0932621621pinkbird":
-        print("[!]管理員密碼錯誤!")
-        return
-    else:
-        clearConsole()
-        print("[*]===============================================")
+    # print("[*]由於接下來的操作涉及多項管理功能，如要繼續操作需要進行第二次認證。")
+    # if input("[?}請輸入管理員密碼: ") != "pinkbird0932621621pinkbird":
+    #     print("[!]管理員密碼錯誤!")
+    #     return
+    # else:
+    #     clearConsole()
+    #     print("[*]===============================================")
     phpMyAdmin_link = "http://" + db_settings["host"] + "/phpMyAdmin"
     webbrowser.open_new(phpMyAdmin_link)
     print("[*]已於預設瀏覽器中開啟: 網頁版管理介面(phpMyAdmin)")
