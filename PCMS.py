@@ -33,7 +33,7 @@ import package.config as config
 from package.sql_command import *
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 
-programVersion = "版本: " + "5.6.6"
+programVersion = "版本: " + "v6.0.0"
 
 class Client:
     def __init__(self) -> None:
@@ -81,11 +81,11 @@ class Illegal_discountCode(Exception):
 
 def registeForm_processing():
     # <---------- departMode selecting start ---------->
-    print("[*]====================出團模式選擇====================")
+    print("[*]", '出團模式選擇'.center(50, '='))
     print("[*]模式選項: ")
     print("[*]  1. 報名表單「不」包含房型選項")
     print("[*]  2. 報名表單包含房型選項")
-    print("[*]===================================================")
+    print("[*]" + ''.center(50, '='))
     while True:
         try:
             departMode = int(input("[?]請選擇出團模式: "))
@@ -144,27 +144,22 @@ def registeForm_processing():
         # print(df)
     except OSError:
         clearConsole()
-        print(
-            "[*]========================================================================================"
-        )
+        print("[*]" + ''.center(80, '='))
         print("[!]警告: 由於 Windows 系統不支援檔案名稱中有空格的程式操作 請將檔案名稱中的空格刪除後再重新執行")
-        print(
-            "[*]========================================================================================"
-        )
+        print("[*]" + ''.center(80, '='))
         print("[*]幫助: 範例: 粉鳥旅行社多日遊報名表單範例 (回覆).xlsx    <- 此為檔案名稱")
         print("[*]           通常空格存在於「(回覆)」的前面，刪除空格後程式即可正常執行!")
         print("[!]提醒: 空格的原因是因為 Google 端的設定，所以在匯入前要特別留意")
-        print(
-            "[*]========================================================================================"
-        )
+        print("[*]" + ''.center(80, '='))
         input("[*]請按任意鍵回到 粉鳥旅行社會員資料庫管理系統-功能選擇介面...")
         return
     # <---------- reading xlsx end ---------->
 
     # <---------- depart info start ---------->
     while True:
-        departDay_raw = input("[?]請輸入出團日期(YYYY.MM.DD)： ").split(".")
-
+        groupName = input('[?]請輸入團名： ')
+        departDay_raw = input("[?]請輸入出團日期(YYYY.MM.DD)： ")
+        departDay_raw = departDay_raw.split(".")
         try:
             departDay = datetime.date(
                 year=int(departDay_raw[0]),
@@ -172,8 +167,12 @@ def registeForm_processing():
                 day=int(departDay_raw[2]),
             )
             if datetime.date.today() > departDay:
-                print("[!]提醒: 出團日期不能不能為過去!") # 2021.09.01 update
-                continue
+                print("[!]提醒: 出團日期是過去的日期！") # 2021.09.01 update
+                if input('[?]是否要繼續進行(y/n)? ') in ('Y', 'y'):
+                    pass
+                else:
+                    print('[!]請重新輸入出團日期...')
+                    continue
             break
         except IndexError:
             print("[!]日期輸入格式錯誤，請重新輸入，並確認格式為: YYYY.MM.DD")
@@ -197,9 +196,11 @@ def registeForm_processing():
     if departMode == 1:
         for idx in range(df.shape[0]):
             IDhere = df.at[idx, df.columns[0]]
+
             # 排除excel檔中的空格狀況
             if isinstance(IDhere, float):
                 continue
+
             attendClient_Dict[IDhere] = Client()
 
             # 順序為: 
@@ -277,11 +278,11 @@ def registeForm_processing():
                 break
 
             if illegal_IDs:
-                print("========================================================================================")
+                print("[*]" + ''.center(80, '='))
                 print("[!]下列身份證字號並未在資料庫中 ! 可能是輸入錯誤或是尚未註冊")
                 for idx, ID in enumerate(illegal_IDs):
                     print(f"[>]\t{idx+1}. 身份證字號: {ID} ")
-                print("========================================================================================")
+                print("[*]" + ''.center(80, '='))
                 while True:
                     Is_Continue_Add_Client = input("[?]是否要直接新增會員資料？(y/n)? ")
                     if Is_Continue_Add_Client in ('Y', 'y'):
@@ -295,7 +296,7 @@ def registeForm_processing():
 
                 
         clearConsole()
-        print("========================================================================================")
+        print("[*]" + ''.center(80, '='))
         print("[*]以下為查詢結果:")
 
         for step, ID in zip(track(clientIDs, description="[\]處理中"), clientIDs):
@@ -500,6 +501,26 @@ def registeForm_processing():
                 if not code_exist:
                     client.alertMsg += f'序號: {client.discountCode} 不存在 '
 
+        # <----- Write Operation Log start ----->
+        operationLog = operationLog = f"出團日期: {departDay.strftime('%Y.%M.%D')} -> 出團名單: {tuple([client.name for client in attendClient_Dict.values()])}"
+        writeOperationLog(
+            connect=conn_log,
+            user=db_settings["user"],
+            content=operationLog
+        )
+        # <----- Write Operation Log end ----->
+
+        # <----- Write Travel Log start ----->
+        writeTravelLog(
+            connect=conn_log,
+            date='.'.join(departDay_raw),
+            groupName=groupName,
+            days=travelDays,
+            costs=costList,
+            attends=[client.name for client in attendClient_Dict.values()]
+        )
+        # <----- Write Travel Log end ----->
+
         # <---------- Making xlsx start ---------->
         if departMode == 1:
             df = xlsx_DataFrame(
@@ -511,36 +532,18 @@ def registeForm_processing():
                 clientList=attendClient_Dict.values(),
                 mode="including_roomType"
             )
-        print("[*]======================================================================")
+        print("[*]" + ''.center(50, '='))
         print(df)
-        print("[*]======================================================================")
+        print("[*]" + ''.center(50, '='))
 
         excelName = "出團清冊" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".xlsx"
         df.to_excel(excelName, sheet_name="出團清冊", index=False, na_rep="空值")
         print("[*]已自動產生 -> " + excelName)
         # <---------- Making xlsx end ---------->
-
-        # <----- Write Operation Log start ----->
-        operationTime = datetime.datetime.now()
-        operationConfigBasePath = f"{os.getcwd()}\\操作紀錄"
-        operationConfigPath = (
-            operationConfigBasePath
-            + "\\"
-            + f"{operationTime.strftime('%Y-%m')}月份操作紀錄.ini"
-        )
-        if not os.path.isdir(operationConfigBasePath):
-            os.mkdir(operationConfigBasePath)
-        if not config.check_config_if_exist(operationConfigPath):
-            config.make_config(operationConfigPath, configMode=3)
-
-        operationLog = f"   操作時間: {operationTime}\n   >出團日期: {departDay.strftime('%Y.%M.%D')}\n   出團名單: {tuple([client.name for client in attendClient_Dict.values()])}\n"
-
-        config.write_config(path=operationConfigPath, content=operationLog)
-        # <----- Write Operation Log end ----->
     except WrongDepartTypeChoose:
-        print("[*]===================================================================================================================================")
+        print("[*]" + ''.center(50, '='))
         print("[!]警告: 可能在出團模式選擇處選擇錯誤，請確認輸入的Excel表格是否為有包含房型選項的格式，確認後請重新選擇出團模式為「報名表單包含房型選項」")
-        print("[*]===================================================================================================================================")
+        print("[*]" + ''.center(50, '='))
     finally: 
         pass
 
@@ -722,19 +725,12 @@ def discountCode():
             break
 
     # <----- Write Operation Log start ----->
-    operationTime = datetime.datetime.now()
-    operationConfigBasePath = f"{os.getcwd()}\\操作紀錄"
-    operationConfigPath = (
-        operationConfigBasePath + "\\" + f"{operationTime.strftime('%Y-%m')}月份操作紀錄.ini"
+    operationLog = f"共產生了 {discountNums} 張 屬於 {clientName} 的 {discountValue} 元的折扣碼"
+    writeOperationLog(
+        connect=conn_log,
+        user=db_settings["user"],
+        content=operationLog
     )
-    if not os.path.isdir(operationConfigBasePath):
-        os.mkdir(operationConfigBasePath)
-    if not config.check_config_if_exist(operationConfigPath):
-        config.make_config(operationConfigPath, configMode=3)
-
-    operationLog = f"   產生時間: {operationTime}\n   >折扣碼產生者: {db_settings['user']}\n   共產生了 {discountNums} 張 屬於 {clientName} 的 {discountValue} 元的折扣碼\n"
-
-    config.write_config(path=operationConfigPath, content=operationLog)
     # <----- Write Operation Log end ----->
 
 
@@ -808,19 +804,12 @@ def discountCode_Manager():
     # <----- 折扣碼銷毀 end ----->
 
     # <----- Write Operation Log start ----->
-    operationTime = datetime.datetime.now()
-    operationConfigBasePath = f"{os.getcwd()}\\操作紀錄"
-    operationConfigPath = (
-        operationConfigBasePath + "\\" + f"{operationTime.strftime('%Y-%m')}月份操作紀錄.ini"
+    operationLog = f"銷毀了折扣碼: {response[0][0]}"
+    writeOperationLog(
+        connect=conn_log,
+        user=db_settings["user"],
+        content=operationLog
     )
-    if not os.path.isdir(operationConfigBasePath):
-        os.mkdir(operationConfigBasePath)
-    if not config.check_config_if_exist(operationConfigPath):
-        config.make_config(operationConfigPath, configMode=3)
-
-    operationLog = f"   銷毀時間: {operationTime}\n   >操作者: {db_settings['user']}\n   銷毀了折扣碼: {response[0][0]}\n"
-
-    config.write_config(path=operationConfigPath, content=operationLog)
     # <----- Write Operation Log end ----->
 
 
@@ -964,31 +953,32 @@ def editClientProfile():
         )
 
     # <----- Write Operation Log start ----->
-    operationConfigBasePath = f"{os.getcwd()}\\操作紀錄"
-    operationTime = datetime.datetime.now()
-    operationConfigPath = (
-        operationConfigBasePath + "\\" + f"{operationTime.strftime('%Y-%m')}月份操作紀錄.ini"
-    )
-
-    if not os.path.isdir(operationConfigBasePath):
-        os.mkdir(operationConfigBasePath)
-    if not config.check_config_if_exist(operationConfigPath):
-        config.make_config(operationConfigPath, configMode=3)
-
     if editMode != "delete":
         preData = ''
         for idx, value in enumerate(column_Dict.values()):
             preData += f'{value}: {clientDataNew[idx]}\t'
-        operationLog = f"   編輯時間: {operationTime}\n   >編輯前資料:\n   {preData}\n"
 
-        config.write_config(path=operationConfigPath, content=operationLog)
+        operationLog = f"編輯前資料: {preData}"
+        writeOperationLog(
+            connect=conn_log,
+            user=db_settings["user"],
+            content=operationLog
+        )
 
-        operationLog = f"   >編輯後資料:\n   {output}\n"
-        config.write_config(path=operationConfigPath, content=operationLog)
+        operationLog = f"編輯後資料: {output}"
+        writeOperationLog(
+            connect=conn_log,
+            user=db_settings["user"],
+            content=operationLog
+        )
     elif editMode == "delete":
-        operationLog = f"   編輯時間: {operationTime}\n   >刪除了 {searchValue} 的會員資料\n"
+        operationLog = f"刪除了 {searchValue} 的會員資料"
 
-        config.write_config(path=operationConfigPath, content=operationLog)
+        writeOperationLog(
+            connect=conn_log,
+            user=db_settings["user"],
+            content=operationLog
+        )
     # <----- Write Operation Log end ----->
 
 
@@ -1072,20 +1062,12 @@ def addClientProfile(clientID = None, disability_switch = True):
         "[*]========================================================================================================================"
     )
     # <----- Write Operation Log start ----->
-    operationConfigBasePath = f"{os.getcwd()}\\操作紀錄"
-    operationTime = datetime.datetime.now()
-    operationConfigPath = (
-        operationConfigBasePath + "\\" + f"{operationTime.strftime('%Y-%m')}月份操作紀錄.ini"
+    operationLog = f"新增資料: {printData}"
+    writeOperationLog(
+        connect=conn_log,
+        user=db_settings["user"],
+        content=operationLog
     )
-
-    if not os.path.isdir(operationConfigBasePath):
-        os.mkdir(operationConfigBasePath)
-    if not config.check_config_if_exist(operationConfigPath):
-        config.make_config(operationConfigPath, configMode=3)
-
-    operationLog = f"   新增時間: {operationTime}\n   >新增資料:\n   {printData}\n"
-
-    config.write_config(path=operationConfigPath, content=operationLog)
     # <----- Write Operation Log end ----->
 
 
@@ -1242,20 +1224,12 @@ def dataRepeatCheck(disability_switch = True):
     elif finalCheck_BeforeEdit in ("n", "N"):
         print("[*]已取消更新")
     # <----- Write Operation Log start ----->
-    operationConfigBasePath = f"{os.getcwd()}\\操作紀錄"
-    operationTime = datetime.datetime.now()
-    operationConfigPath = (
-        operationConfigBasePath + "\\" + f"{operationTime.strftime('%Y-%m')}月份操作紀錄.ini"
+    operationLog = f"更動名單: {[client.name for client in selectedList]}"
+    writeOperationLog(
+        connect=conn_log,
+        user=db_settings["user"],
+        content=operationLog
     )
-
-    if not os.path.isdir(operationConfigBasePath):
-        os.mkdir(operationConfigBasePath)
-    if not config.check_config_if_exist(operationConfigPath):
-        config.make_config(operationConfigPath, configMode=3)
-
-    operationLog = f"   操作時間: {operationTime}\n   >更動名單:\n   {[client.name for client in selectedList]}\n"
-
-    config.write_config(path=operationConfigPath, content=operationLog)
     # <----- Write Operation Log end ----->
 
 
@@ -1525,7 +1499,6 @@ def list_all_ClientData():
         print(f'[*] {int(idx) + 1}. {printData}')
 
 
-
 functionDefined = {
     # 一般指令
     "1": registeForm_processing,
@@ -1545,14 +1518,17 @@ functionDefined = {
 
 def connect_sql_server():
     global loginSuccess
+
+    # 使用者帳號有可能會錯誤 故需要一個確保能正常運作的帳號來紀錄Log
     db_log_settings = {
         "host": db_settings["host"],
         "port": db_settings["port"],
-        "user": 'log_writer',
-        "password": 'Log-63397021',
-        "database": 'PCMS_LOG',
+        "user": configResult["log-user"],
+        "password": configResult["log-password"],
+        "database": configResult["log-database"],
         "charset": "utf8",
     }
+    
     try:
         global is_IP_allow
         global conn, conn_log
@@ -1615,10 +1591,7 @@ if __name__ == "__main__":
             timeout = 60
             timeout_check = True
             is_exit = False
-            try:
-                retryLogin = 0
-            except NameError:
-                pass
+            retryLogin = ''
             while True:
                 print(f"[-]連接至資料庫 -> {db_settings['database']} 中, 路徑為: {db_settings['host']}:{db_settings['port']}")
                 
@@ -1692,7 +1665,7 @@ if __name__ == "__main__":
                 writeLog(
                     is_Success=loginSuccess,
                     connect=conn_log,
-                    writeList='登入記錄',
+                    writeList='LOGIN_LOG',
                     key=('時間', '操作者', '狀態'),
                     value_success=(
                         f'{loginTime.strftime("%Y-%m-%d %H:%M:%S")}',
@@ -1788,16 +1761,11 @@ if __name__ == "__main__":
             else:
                 operationName_inChinese = functionChoose
 
-            operationTime = datetime.datetime.now()
-            operationLog = (str(operationTime), db_settings['user'], operationName_inChinese)
-            writeLog(
-                is_Success=True,
+            # <----- Write Operation Log start ----->
+            writeOperationLog(
                 connect=conn_log,
-                writeList='操作記錄',
-                key=('時間', '操作者', '內容'),
-                value_success=operationLog,
-                value_failed=operationLog,
-                is_commit=True
+                user=db_settings["user"],
+                content=operationName_inChinese
             )
             # <----- Write Operation Log end ----->
 
@@ -1808,8 +1776,8 @@ if __name__ == "__main__":
             writeLog(
                 is_Success=True,
                 connect=conn_log,
-                writeList='登入記錄',
-                key=('時間', '操作者', '狀態'),
+                writeList='LOGIN_LOG',
+                key=('時間', '使用者', '內容'),
                 value_success=(
                     f'{loginTime.strftime("%Y-%m-%d %H:%M:%S")}',
                     db_settings['user'],
