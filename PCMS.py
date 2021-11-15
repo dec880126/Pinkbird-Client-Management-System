@@ -555,6 +555,7 @@ def generate_discountCode(codeAmount, randomAmount, codeValue, prefix, clientNam
     for _ in range(codeAmount):
         while True:
             # <----- 亂碼產生 start ----->
+            # 由序號擁有人之身分證字號數字9碼 + 五位亂數 + 序號面額
             codeKey = prefix + "".join(
                 secrets.choice(string.ascii_letters) for _ in range(randomAmount)
             ) + str(codeValue)
@@ -643,7 +644,7 @@ def generate_discountCode(codeAmount, randomAmount, codeValue, prefix, clientNam
 def discountCode():
     print("[*]===============================================")
     print("[*]序號產生器說明:")
-    print("[*]由序號擁有人之身分證字號數字9碼 + 五位亂數 -> 組合而成")
+    print("[*]由序號擁有人之身分證字號數字9碼 + 五位亂數 + 序號面額 -> 組合而成")
     print("[*]================模式選擇=================")
     print("[*]          1. 發放折扣碼")
     print("[*]          2. 產生官方折扣碼")
