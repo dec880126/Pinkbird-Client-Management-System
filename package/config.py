@@ -17,7 +17,10 @@ def load_config(path = "./config.ini"):
 
     return {
         "host": config["Setting"]["host"],
-        "port": config["Setting"]["port"]
+        "port": config["Setting"]["port"],
+        "log-user": config["Log"]["user"],
+        "log-password": config["Log"]["password"],
+        "log-database": config["Log"]["database"]
     }
 
 
@@ -51,6 +54,10 @@ def system_config(f):
     f.write("host = \n")
     f.write("; port 為資料庫所對應之 IP 的連接埠\n")
     f.write("port = ")
+    f.write("\n\n[Log]\n")
+    f.write("user = \n")
+    f.write("password = \n")
+    f.write("database = \n")
 
 def login_log_config(f):
     f.write("[粉鳥旅行社會員資料庫管理系統 登入紀錄]\n")
