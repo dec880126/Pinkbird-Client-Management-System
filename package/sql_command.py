@@ -10,6 +10,7 @@ FUNCTION LIBRARY OF SQL COMMAND
  - countCommand
 """
 from pymysql.connections import Connection
+import datetime
 
 
 def searchCommand(listFrom: str, key: str, searchBy) -> str:
@@ -57,6 +58,7 @@ def insertCommand(listFrom: str, key: tuple, value: tuple) -> str:
 
     INSERT INTO `會員資料` (`姓名`, `身分證字號`, `生日`, `電話`, `餐食`, `特殊需求`, `暱稱`, `旅遊天數`) VALUES ([value-1],[value-2],[value-3],[value-4],[value-5],[value-6],[value-7],[value-8])
     """
+    value = tuple([str(x) for x in value])
     singleQuote = "\'"
     backQuote = "`"
     return f"INSERT INTO `{str(listFrom)}` {str(key).replace(singleQuote, backQuote)} VALUES {str(value)}"
@@ -115,7 +117,7 @@ def writeLog(is_Success: bool, connect: Connection, writeList: str, key: tuple, 
             connect=connect,
             instruction=insertCommand(
                 listFrom=writeList,
-                key=key,
+                key=('時間', '操作者', '內容'),
                 value=value_success
             ),
             is_commit=is_commit
@@ -125,8 +127,70 @@ def writeLog(is_Success: bool, connect: Connection, writeList: str, key: tuple, 
             connect=connect,
             instruction=insertCommand(
                 listFrom=writeList,
-                key=key,
+                key=('時間', '操作者', '內容'),
                 value=value_failed
             ),
             is_commit=is_commit
         )
+
+def writeOperationLog(connect: Connection, user: str, content: str):
+    """
+    ### 參數用法
+
+     - value(
+         時間,
+         操作者,
+         內容
+     )
+    """
+    sql_operator(
+        connect=connect,
+        instruction=insertCommand(
+            listFrom='OP_LOG',
+            key=('時間', '操作者', '內容'),
+            value=(str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')), user, content)
+        ),
+        is_commit=True
+    )
+
+def writeTravelLog(connect: Connection, date: str, groupName: str, days: int, costs: list, attends: list):
+    """
+    ### 參數用法
+
+     - date: 出團日期
+     - groupName: 團名
+     - days: 日數
+     - costs: 團費
+     - attends: 參加者清單
+    """
+    SN_base = date.replace('.', '')
+
+    check = sql_operator(
+        connect=connect,
+        instruction=searchCommand(
+            listFrom='DEPART_LOG',
+            key='S/N',
+            searchBy=SN_base + '01'
+        ),
+        is_fetchAll=True
+    )
+    if len(check) == 0:
+        serialNumber = SN_base + '01'
+    else:
+        serialNumber = SN_base + f'{len(check)+1:02d}'
+
+    data = {
+        'S/N': serialNumber,
+        '日期': date,
+        '團名': groupName,
+        '日數': str(days),
+        '團費': str(costs),
+        '參加者清單': str(attends)
+    }
+
+    sql_operator(
+        connect=connect,
+        instruction=insertCommand('DEPART_LOG', tuple(data.keys()), tuple(data.values())),
+        is_commit=True
+    )
+
