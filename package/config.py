@@ -5,6 +5,11 @@ import os
 # [Synology]
 # path = 
 # port = 
+#
+# [Log]
+# user = 
+# password = 
+# database = 
 # """
 
 def check_config_if_exist(path):
