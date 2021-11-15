@@ -1632,7 +1632,6 @@ if __name__ == "__main__":
             print('[!]' + '此電腦的 IP 不在資料庫允許的連線清單內，請將IP加入允許連線清單後再重新登入。')
             input('[!]' + '請按Enter來結束程式...')
             sys.exit()
-
         except TimeoutError:
             print("[!]連線逾時... 請檢查網路相關設定 !")
             # <----- Write Login Log start ----->
@@ -1685,9 +1684,7 @@ if __name__ == "__main__":
 
     # <----- Get Column Name start ----->
     corsor = conn.cursor()
-    corsor.execute(
-        getColumeNames(tableName='會員資料')
-    )
+    corsor.execute(getColumeNames(tableName='會員資料'))
     columeNames = [colName[0] for colName in corsor.fetchall()]
     global column_Dict
     column_Dict = dict(zip(
