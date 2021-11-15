@@ -17,10 +17,7 @@ def load_config(path = "./config.ini"):
 
     return {
         "host": config["Setting"]["host"],
-        "port": config["Setting"]["port"],
-        "log-user": config["Log"]["user"],
-        "log-password": config["Log"]["password"],
-        "log-database": config["Log"]["database"]
+        "port": config["Setting"]["port"]
     }
 
 
