@@ -25,7 +25,7 @@
 
 ## 最新版本: 6.0.0
 
-> Last update: 2021.11.14
+> Last update: 2021.11.15
 ### What's New in v6.0.0
 
  - UI/UX優化
