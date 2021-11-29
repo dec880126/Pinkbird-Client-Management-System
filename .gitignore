@@ -1,2 +1,11 @@
 
 *.xlsx
+package/__pycache__/overview.cpython-39.pyc
+test.ipynb
+PCMS.spec
+package/__pycache__/year_cal.cpython-39.pyc
+package/__pycache__/tools.cpython-39.pyc
+package/__pycache__/sql_command.cpython-39.pyc
+package/__pycache__/config.cpython-39.pyc
+package/__pycache__/__init__.cpython-39.pyc
+.DS_Store
