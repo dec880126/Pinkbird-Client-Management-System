@@ -34,7 +34,7 @@ from package.sql_command import *
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 from package.overview import *
 
-programVersion = "版本: " + "v6.0.1"
+programVersion = "版本: " + "v6.1.0-dev"
 
 class Client:
     def __init__(self) -> None:
@@ -1049,26 +1049,33 @@ def addClientProfile(clientID = None, disability_switch = True):
     # <----- Write Operation Log end ----->
 
 
-def dataRepeatCheck(disability_switch = True):
-    print("[*]===============================================")
+def dataRepeatCheck():
+    print("[>]" + '正在執行重複會員資料檢查......')
     repeateID_Dict = {}
     selectedList = []
-    repeateChecker = conn.cursor()
-    reader = conn.cursor()
-    repeateChecker.execute("select * from `會員資料` group by `身分證字號` having count(*) > 1")
-    response = repeateChecker.fetchall()
+    response = sql_operator(
+        connect=conn,
+        instruction="select * from `會員資料` group by `身分證字號` having count(*) > 1",
+        is_fetchAll=True,
+        is_commit=False
+    )
     
     if len(response) == 0:
-        print("[!]會員資料庫目前無重複資料")
+        print("[*]會員資料庫目前無重複資料!")
         return
+    else:
+        input('[!]會員資料庫中有重複的會員資料，請按下「Enter」來處理重複資料。')
     
-    repeateChecker.execute(
-        getColumeNames(tableName='會員資料')
+    columeNames = sql_operator(
+        connect=conn,
+        instruction=getColumeNames(tableName='會員資料'),
+        is_fetchAll=True,
+        is_commit=False
     )
-    columeNames = tuple([colName[0] for colName in repeateChecker.fetchall()])
+    columeNames = tuple([colName[0] for colName in columeNames])
     
     while True:
-        print("[*]以下為重複會員資料之名單::")
+        print("[*]" + '以下為重複會員資料之名單'.center(50, '='))
         for clientRepeat in response:
             print(f"[>]姓名: {clientRepeat[0]} 身分證字號: {clientRepeat[1]}")
         input("[*]請按 Enter鍵 開始選擇保留版本")
@@ -1077,11 +1084,14 @@ def dataRepeatCheck(disability_switch = True):
         # <----- choosing start ----->
         for clientRepeat in response:
             print(f"[>]姓名: {clientRepeat[0]} 身分證字號: {clientRepeat[1]}")
-            reader.execute(
-                searchCommand(listFrom="會員資料", key="身分證字號", searchBy=clientRepeat[1])
+            clientData = sql_operator(
+                connect=conn,
+                instruction=searchCommand(listFrom="會員資料", key="身分證字號", searchBy=clientRepeat[1]),
+                is_fetchAll=True,
+                is_commit=False
             )
             print(f"[*]以下為 {clientRepeat[1]} {clientRepeat[0]} 的每組重複之資料:")
-            for idx, searchResult in enumerate(reader.fetchall()):
+            for idx, searchResult in enumerate(clientData):
                 repeateID_Dict[idx + 1] = Client()
                 repeateID_Dict[idx + 1].name = searchResult[0]
                 repeateID_Dict[idx + 1].id = searchResult[1]
@@ -1091,30 +1101,18 @@ def dataRepeatCheck(disability_switch = True):
                 repeateID_Dict[idx + 1].specialNeeds = searchResult[5]
                 repeateID_Dict[idx + 1].nickName = searchResult[6]
                 repeateID_Dict[idx + 1].travelDays = searchResult[7]
-                if disability_switch:
-                    repeateID_Dict[idx + 1].disability = searchResult[8]
-                    print(
-                        f"[>]{idx+1}. 姓名: {repeateID_Dict[idx+1].name}\t" + 
-                        f"身分證字號: {repeateID_Dict[idx+1].id}\t" + 
-                        f"生日: {repeateID_Dict[idx+1].birthday}\t" + 
-                        f"電話: {repeateID_Dict[idx+1].phone}\t" + 
-                        f"餐食: {repeateID_Dict[idx+1].foodType}\t" + 
-                        f"特殊需求: {repeateID_Dict[idx+1].specialNeeds}\t" + 
-                        f"暱稱: {repeateID_Dict[idx+1].nickName}\t" + 
-                        f"旅遊天數: {repeateID_Dict[idx+1].travelDays}\t" + 
-                        f"身心障礙: {repeateID_Dict[idx+1].disability}"
-                    )
-                else:
-                    print(
-                        f"[>]{idx+1}. 姓名: {repeateID_Dict[idx+1].name}\t" + 
-                        f"身分證字號: {repeateID_Dict[idx+1].id}\t" + 
-                        f"生日: {repeateID_Dict[idx+1].birthday}\t" + 
-                        f"電話: {repeateID_Dict[idx+1].phone}\t" + 
-                        f"餐食: {repeateID_Dict[idx+1].foodType}\t" + 
-                        f"特殊需求: {repeateID_Dict[idx+1].specialNeeds}\t" + 
-                        f"暱稱: {repeateID_Dict[idx+1].nickName}\t" + 
-                        f"旅遊天數: {repeateID_Dict[idx+1].travelDays}"
-                    )
+                repeateID_Dict[idx + 1].disability = searchResult[8]
+                print(
+                    f"[>]{idx+1}. 姓名: {repeateID_Dict[idx+1].name}\t" + 
+                    f"身分證字號: {repeateID_Dict[idx+1].id}\t" + 
+                    f"生日: {repeateID_Dict[idx+1].birthday}\t" + 
+                    f"電話: {repeateID_Dict[idx+1].phone}\t" + 
+                    f"餐食: {repeateID_Dict[idx+1].foodType}\t" + 
+                    f"特殊需求: {repeateID_Dict[idx+1].specialNeeds}\t" + 
+                    f"暱稱: {repeateID_Dict[idx+1].nickName}\t" + 
+                    f"旅遊天數: {repeateID_Dict[idx+1].travelDays}\t" + 
+                    f"身心障礙: {repeateID_Dict[idx+1].disability}"
+                )
             while True:
                 try:
                     selectFromRepeat = int(
@@ -1125,28 +1123,60 @@ def dataRepeatCheck(disability_switch = True):
                     input("[!]輸入有誤，請輸入正確的保留版本編號")
             temp = repeateID_Dict[selectFromRepeat]
             selectedList.append(temp)
-            if disability_switch:
-                print(
-                    f"[*]\t保存的版本:\n[*]\t{selectFromRepeat}. 姓名: {temp.name}\t身分證字號: {temp.id}\t生日: {temp.birthday}\t電話: {temp.phone}\t餐食: {temp.foodType}\t特殊需求: {temp.specialNeeds}\t暱稱: {temp.nickName}\t旅遊天數: {temp.travelDays}\t身心障礙: {temp.disability}"
-                )
-            else:
-                print(
-                    f"[*]\t保存的版本:\n[*]\t{selectFromRepeat}. 姓名: {temp.name}\t身分證字號: {temp.id}\t生日: {temp.birthday}\t電話: {temp.phone}\t餐食: {temp.foodType}\t特殊需求: {temp.specialNeeds}\t暱稱: {temp.nickName}\t旅遊天數: {temp.travelDays}"
-                )
+            print(
+                f"[*]\t保存的版本:\n[*]\t{selectFromRepeat}. 姓名: {temp.name}\t身分證字號: {temp.id}\t生日: {temp.birthday}\t電話: {temp.phone}\t餐食: {temp.foodType}\t特殊需求: {temp.specialNeeds}\t暱稱: {temp.nickName}\t旅遊天數: {temp.travelDays}\t身心障礙: {temp.disability}"
+            )
             print("[-]")
             input("[*]請按 Enter鍵 繼續選取...")
             print("[-]")
         clearConsole()
         print("[*]以下為最終選取的保留版本:")
-        for selected in selectedList:
-            if disability_switch:
-                print(
-                    f"[*]姓名: {selected.name}\t身分證字號: {selected.id}\t生日: {selected.birthday}\t電話: {selected.phone}\t餐食: {selected.foodType}\t特殊需求: {selected.specialNeeds}\t暱稱: {selected.nickName}\t旅遊天數: {selected.travelDays}\t身心障礙: {selected.disability}"
-                )
+        for clientRepeat, selected in zip(response, selectedList):
+            if clientRepeat[0] != selected.name:
+                print(f'[>]姓名: {clientRepeat[0]} 更改為 -> {selected.name}')
             else:
-                print(
-                    f"[*]姓名: {selected.name}\t身分證字號: {selected.id}\t生日: {selected.birthday}\t電話: {selected.phone}\t餐食: {selected.foodType}\t特殊需求: {selected.specialNeeds}\t暱稱: {selected.nickName}\t旅遊天數: {selected.travelDays}"
-                )
+                print(f'[>]姓名: {clientRepeat[0]} -> 無更改')
+
+            if clientRepeat[1] != selected.id:
+                print(f'[>]身分證字號: {clientRepeat[1]} 更改為 -> {selected.id}')
+            else:
+                print(f'[>]身分證字號: {clientRepeat[1]} -> 無更改')
+
+            if clientRepeat[2] != selected.birthday:
+                print(f'[>]生日: {clientRepeat[2]} 更改為 -> {selected.birthday}')
+            else:
+                print(f'[>]生日: {clientRepeat[2]} -> 無更改') 
+            
+            if clientRepeat[3] != selected.phone:
+                print(f'[>]電話: {clientRepeat[3]} 更改為 -> {selected.phone}')
+            else:
+                print(f'[>]電話: {clientRepeat[3]} -> 無更改') 
+            
+            if clientRepeat[4] != selected.foodType:
+                print(f'[>]餐食: {clientRepeat[4]} 更改為 -> {selected.foodType}')
+            else:
+                print(f'[>]電話: {clientRepeat[4]} -> 無更改') 
+
+            if clientRepeat[5] != selected.specialNeeds:
+                print(f'[>]特殊需求: {clientRepeat[5]} 更改為 -> {selected.specialNeeds}')
+            else:
+                print(f'[>]特殊需求: {clientRepeat[5]} -> 無更改') 
+
+            if clientRepeat[6] != selected.nickName:
+                print(f'[>]暱稱: {clientRepeat[6]} 更改為 -> {selected.nickName}')
+            else:
+                print(f'[>]暱稱: {clientRepeat[6]} -> 無更改') 
+
+            if clientRepeat[7] != selected.travelDays:
+                print(f'[>]旅遊天數: {clientRepeat[7]} 更改為 -> {selected.travelDays}')
+            else:
+                print(f'[>]旅遊天數: {clientRepeat[7]} -> 無更改') 
+
+            if clientRepeat[8] != selected.disability:
+                print(f'[>]身心障礙: {clientRepeat[8]} 更改為 -> {selected.disability}')
+            else:
+                print(f'[>]身心障礙: {clientRepeat[8]} -> 無更改') 
+
         reChoose = input("[*]如果要重新選擇，請輸入「re」，如果確認要使用上述資料作為最新資料，直接按「Enter鍵」繼續")
         if reChoose != "re":
             break
@@ -1155,52 +1185,56 @@ def dataRepeatCheck(disability_switch = True):
         # <----- choosing end ----->
 
     finalCheck_BeforeEdit = input("[?]是否確定要更新資料(y/n): ")
+    update_success = []
     if finalCheck_BeforeEdit in ('y, "Y'):
         for client in selectedList:
-            # DELETE
-            repeateChecker.execute(
-                deleteCommand(listFrom="會員資料", key="身分證字號", value=client.id)
-            )
-            conn.commit()
-            # re:ADD
-            if disability_switch:
-                command = insertCommand(
-                    listFrom="會員資料",
-                    key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
-                    value=(
-                        client.name,
-                        client.id,
-                        client.birthday,
-                        client.phone,
-                        client.foodType,
-                        client.specialNeeds,
-                        client.nickName,
-                        client.travelDays,
-                        client.disability
-                    )
+            try:
+                # DELETE
+                sql_operator(
+                    connect=conn,
+                    instruction=deleteCommand(listFrom="會員資料", key="身分證字號", value=client.id),
+                    is_fetchAll=False,
+                    is_commit=False
                 )
-            else:
-                command = insertCommand(
-                    listFrom="會員資料",
-                    key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
-                    value=(
-                        client.name,
-                        client.id,
-                        client.birthday,
-                        client.phone,
-                        client.foodType,
-                        client.specialNeeds,
-                        client.nickName,
-                        client.travelDays
-                    )
+                # re:ADD
+                sql_operator(
+                    connect=conn,
+                    instruction=insertCommand(
+                        listFrom="會員資料",
+                        key=("姓名", "身分證字號", "生日", "電話", "餐食", "特殊需求", "暱稱", "旅遊天數", "身心障礙"),
+                        value=(
+                            client.name,
+                            client.id,
+                            client.birthday,
+                            client.phone,
+                            client.foodType,
+                            client.specialNeeds,
+                            client.nickName,
+                            client.travelDays,
+                            client.disability
+                        )
+                    ),
+                    is_fetchAll=False,
+                    is_commit=False
                 )
-            repeateChecker.execute(insertCommand(command))
+                update_success.append(client.name)
+            except Exception as errorMsg:
+                print(f'[!]在處理會員：{client.name}({client.id})的資料時發生問題！')
+                print(f'[!]錯誤資訊： {errorMsg}')
+        else:
+            # 確認都正常運作後再commit
             conn.commit()
-            print(f"[*]{client.name} 資料已更新 ")
-        repeateChecker.execute("SELECT `身分證字號` FROM `會員資料` WHERE 1")
-        print(f"[*]所有資料庫中重複的資料已更新完成 目前資料庫總共有: {len(repeateChecker.fetchall())} 筆資料")
+        print(f"[*]{update_success} 的資料已更新 ")
+        result = sql_operator(
+            connect=conn,
+            instruction="SELECT `身分證字號` FROM `會員資料` WHERE 1",
+            is_fetchAll=True,
+            is_commit=False
+        )
+        print(f"[*]所有資料庫中重複的資料已更新完成 目前資料庫總共有: {len(result)} 筆資料")
     elif finalCheck_BeforeEdit in ("n", "N"):
         print("[*]已取消更新")
+
     # <----- Write Operation Log start ----->
     operationLog = f"更動名單: {[client.name for client in selectedList]}"
     writeOperationLog(
@@ -1336,12 +1370,11 @@ functionDefined = {
     "2": discountCode_Manager,
     "3": editClientProfile,
     "4": addClientProfile,
-    "5": dataRepeatCheck,
-    "6": open_phpMyAdmin,
-    "7": overview,
-    "8": list_all_ClientData,
-    # "i": open_github,    
-    "E": exit_pinkbird_system,
+    # "5": dataRepeatCheck,
+    "5": open_phpMyAdmin,
+    "6": overview,
+    "7": list_all_ClientData,
+    # "i": open_github,
     "e": exit_pinkbird_system,
     # 進階指令
     "changeDisabilityFunctions": change_disability_functions
@@ -1535,6 +1568,10 @@ if __name__ == "__main__":
         #     '9': '身心障礙'
         # }
     # <----- Get Column Name End ----->
+    try:
+        dataRepeatCheck()
+    except KeyboardInterrupt:
+        print('\n\n\n[!]已取消重複會員資料處理！ 操作會員資料與出團時務必注意是否使用到重複的資料！')
 
     # <----- Main Loop start ----->
     while True:
@@ -1549,14 +1586,15 @@ if __name__ == "__main__":
         print("[*]" + "\t  2. 旅遊金序號管理")
         print("[*]" + "\t  3. 會員資料查詢")
         print("[*]" + "\t  4. 新增會員資料")
-        print("[*]" + "\t  5. 檢查會員資料是否重複")
-        print("[*]" + "\t  6. 開啟網頁介面")
-        print("[*]" + "\t  7. 資料庫總覽")
-        print("[*]" + "\t  8. 會員資料總覽")
+        print("[*]" + "\t  5. 開啟網頁介面")
+        print("[*]" + "\t  6. 資料庫總覽")
+        print("[*]" + "\t  7. 會員資料總覽")
         print("[*]" + "\t  e. 離開系統")
         print("[*]" + "=" * 40)
         print("[*]在各功能介面中，隨時可以按下「Ctrl + C」回到此主選單介面")
         functionChoose = input(f"[?]請選擇功能: ")
+        if functionChoose == 'E':
+            functionChoose == 'e'
 
         if functionChoose not in functionDefined:
             print("[*]===============================================")
@@ -1574,17 +1612,17 @@ if __name__ == "__main__":
                 operationName_inChinese = "會員資料(可查詢、編輯或刪除)"
             elif functionChoose == "4":
                 operationName_inChinese = "手動新增會員資料"
+            # elif functionChoose == "5":
+            #     operationName_inChinese = "檢查會員資料是否重複"
             elif functionChoose == "5":
-                operationName_inChinese = "檢查會員資料是否重複"
-            elif functionChoose == "6":
                 operationName_inChinese = "開啟網頁版管理介面"
-            elif functionChoose == "7":
+            elif functionChoose == "6":
                 operationName_inChinese = "資料庫總覽"
-            elif functionChoose == "8":
+            elif functionChoose == "7":
                 operationName_inChinese = "查看所有會員資料（總覽）"
             # elif functionChoose == "i":
             #     operationName_inChinese = "開啟GitHub"
-            elif functionChoose in ("e", "E"):
+            elif functionChoose == 'e':
                 operationName_inChinese = "結束系統"
             else:
                 operationName_inChinese = functionChoose
