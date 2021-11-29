@@ -1,7 +1,6 @@
 
 *.xlsx
 package/__pycache__/overview.cpython-39.pyc
-test.ipynb
 PCMS.spec
 package/__pycache__/year_cal.cpython-39.pyc
 package/__pycache__/tools.cpython-39.pyc
