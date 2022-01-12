@@ -196,7 +196,7 @@ def registeForm_processing():
 
     if departMode == 1:
         for idx in range(df.shape[0]):
-            IDhere = df.at[idx, df.columns[0]]
+            IDhere = df.at[idx, df.columns[0]].replace(' ', '')
 
             # 排除excel檔中的空格狀況
             if isinstance(IDhere, float):
@@ -228,7 +228,7 @@ def registeForm_processing():
             raise KeyboardInterrupt
     elif departMode == 2:
         for idx in range(df.shape[0]):
-            IDhere = df.at[idx, df.columns[0]]
+            IDhere = df.at[idx, df.columns[0]].replace(' ', '')
             # 排除excel檔中的空格狀況
             if isinstance(IDhere, float):
                 continue
