@@ -25,12 +25,10 @@
 
 ## 最新版本: 6.0.0
 
-> Last update: 2021.11.15
-### What's New in v6.0.0
+> Last update: 2022.01.12
+### What's New in v6.0.1
 
- - UI/UX優化
- - LOG由本地紀錄改為雲端紀錄
- - Config架構更改
+ - Bug Fixed
 
 ## To-Do List
  - [x] Solve bugs in v5.7.0-dev
