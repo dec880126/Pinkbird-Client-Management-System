@@ -23,12 +23,13 @@
     * [登入與操作紀錄](#log)
 * [版權聲明](#copyright)
 
-## 最新版本: 6.0.1
+## 最新版本: 6.1.0
 
-> Last update: 2022.01.12
-### What's New in v6.0.1
+> Last update: 2022.02.25
+### What's New in v6.1.0
 
- - Bug Fixed
+ - Update set_cost() function
+ - Optimization WorkFlow
 
 ## To-Do List
  - [x] Solve bugs in v5.7.0-dev
