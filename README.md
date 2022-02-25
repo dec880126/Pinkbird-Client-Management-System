@@ -10,7 +10,7 @@
 
 
    <a href = "https://github.com/dec880126/Pinkbird-Client-Management-System/blob/main/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/dec880126/Pinkbird-Client-Management-System?style=plastic"></a>
-   <a href = "https://github.com/dec880126/Pinkbird-Client-Management-System/releases/tag/5.2.0"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/downloads/dec880126/Pinkbird-Client-Management-System/latest/total?style=plastic"></a>
+   <a href = "https://github.com/dec880126/Pinkbird-Client-Management-System/releases/tag/6.1.1"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/downloads/dec880126/Pinkbird-Client-Management-System/latest/total?style=plastic"></a>
 
 ## 目錄
 
@@ -23,13 +23,16 @@
     * [登入與操作紀錄](#log)
 * [版權聲明](#copyright)
 
-## 最新版本: 6.1.0
+## 最新版本: 6.1.1
 
 > Last update: 2022.02.25
-### What's New in v6.1.0
+### What's New in v6.1.1
 
  - Update set_cost() function
  - Optimization WorkFlow
+ - Fixed the bug about age analysis
+ - Add some scripts for run and compile to .exe
+
 
 ## To-Do List
  - [x] Solve bugs in v5.7.0-dev

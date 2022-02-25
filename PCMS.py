@@ -34,7 +34,7 @@ from package.sql_command import *
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 from package.overview import *
 
-programVersion = "版本: " + "v6.1.0"
+programVersion = "版本: " + "v6.1.1"
 
 class Client:
     def __init__(self) -> None:
@@ -967,6 +967,8 @@ def editClientProfile():
 
 
 def addClientProfile(clientID = None, disability_switch = True):
+    editor = conn.cursor()
+
     while True:
         try:
             addClient = Client()
@@ -976,6 +978,28 @@ def addClientProfile(clientID = None, disability_switch = True):
             else:
                 print("[*]" + f"身分證字號： {clientID}".center(50, "="))
                 addClient.id = clientID
+
+            editor.execute(
+                searchCommand(
+                    listFrom='會員資料',
+                    key='身分證字號',
+                    searchBy=addClient.id
+                )
+            )
+            _data = editor.fetchall()
+            _data_amount = len(_data)
+            try:
+                if _data[0] != None:
+                    for _ in range(5):
+                        print('[*]')
+                    print(f'[!]身分證字號: {addClient.id} 資料已在會員資料庫中 !  (共 {_data_amount} 筆)')
+                    print(f'[>]\t會員資料: {_data[0]}')
+                    for _ in range(5):
+                        print('[*]')
+                    return
+            except IndexError:
+                pass
+
             addClient.name = input("[?]請輸入 客戶姓名: ")
             addClient.birthday = input("[?]請輸入 出生年月日(民國曆/西元曆皆可): ")
             addClient.phone = input("[?]請輸入 連絡電話: ")
@@ -988,7 +1012,6 @@ def addClientProfile(clientID = None, disability_switch = True):
             
             input("[?]請確認以上資料正確無誤後，按下 Enter 繼續，如有錯誤，請按「Ctrl + C」來重新輸入。")
 
-            editor = conn.cursor()
             if disability_switch:
                 editor.execute(
                     insertCommand(
@@ -1026,7 +1049,7 @@ def addClientProfile(clientID = None, disability_switch = True):
                 )
             break
         except KeyboardInterrupt:
-            pass
+            return
     conn.commit()
     editor.execute(searchCommand(listFrom="會員資料", key="身分證字號", searchBy=addClient.id))
     newData = editor.fetchall()[0]

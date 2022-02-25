@@ -32,7 +32,7 @@ def travelsDay_ranking_overview(connection: Connection):
 
 
 def ages_overview(connection: Connection):
-    age_0_3 = age_4_6 = age_7_12 = age_13_64 = age_65up = 0
+    age_0_3 = age_4_6 = age_7_12 = age_13_64 = age_65up = undefined = 0
     total_age = 0
 
     with connection.cursor() as cur:
@@ -42,7 +42,9 @@ def ages_overview(connection: Connection):
         births = cur.fetchall()
         for birth in births:
             age = get_years_old(birth[0], datetime.date.today())
-            total_age += age
+
+            if age >= 0:
+                total_age += age
 
             if age >= 0 and age <= 3:
                 age_0_3 += 1
@@ -54,6 +56,8 @@ def ages_overview(connection: Connection):
                 age_13_64 += 1
             elif age >= 65:
                 age_65up += 1
+            elif age < 0:
+                undefined += 1
         
     print("[*]" + "="*40)
     print(f"[*] 0  ~ 3   歲共有 {age_0_3} 人    -> {age_0_3/amount_of_clients*100: 3.2f}%")
@@ -61,8 +65,9 @@ def ages_overview(connection: Connection):
     print(f"[*] 7  ~ 12  歲共有 {age_7_12} 人    -> {age_7_12/amount_of_clients*100: 3.2f}%")
     print(f"[*] 13 ~ 64  歲共有 {age_13_64} 人    -> {age_13_64/amount_of_clients*100: 3.2f}%")
     print(f"[*]   >= 65  歲共有 {age_65up} 人    -> {age_65up/amount_of_clients*100: 3.2f}%")
+    print(f"[*]  無資料     共有 {undefined} 人    -> {undefined/amount_of_clients*100: 3.2f}%")
     print("[*]" + "="*40)
-    print(f"[*]資料庫總人數為 {amount_of_clients} 人，平均 {total_age/amount_of_clients: 2.2f} 歲")
+    print(f"[*]資料庫總人數為 {amount_of_clients} 人，平均 {total_age/(amount_of_clients - undefined): 2.2f} 歲")
 
 
 def foodType_overview(connection: Connection):

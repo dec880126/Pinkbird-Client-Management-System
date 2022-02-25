@@ -4,8 +4,10 @@ from pandas.core.frame import DataFrame
 
 def set_cost():
     cost_list = list()
+    print('[*]' + '='*50)
     print('[*]在數字後面補上「+」，即可設定均一價。')
     print('[*]例如: 1000+ ，等於是設定均一價為1000元。')
+    print('[*]' + '='*50)
 
     for years_old in ('3歲以下', '4~6歲', '7~12歲', '13~64歲', '65歲以上'):
         _in = input(f'[?]{years_old}報價: ')

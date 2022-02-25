@@ -45,9 +45,18 @@ def minus_result(first_year, second_year):
 
 
 def get_years_old(birth, day):
-    
+    if not birth:
+        return -1    
 
-    birthSpilt = birth.split('.')
+    if '.' in birth:
+        birthSpilt = birth.split('.')
+    elif ',' in birth:
+        birthSpilt = birth.split(',')
+    elif '/' in birth:
+        birthSpilt = birth.split('/')
+    elif '_' in birth:
+        birthSpilt = birth.split('_')
+
     birth = datetime.date(
         year=int(birthSpilt[0])+1911,
         month=int(birthSpilt[1]),
