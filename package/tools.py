@@ -3,17 +3,25 @@ import pandas as pd
 from pandas.core.frame import DataFrame
 
 def set_cost():
-    cost_3 = int(input('[?]3歲以下報價: '))
-    cost4to6 = int(input('[?]4~6歲報價: '))
-    cost7to12 = int(input('[?]7~12歲報價: '))
-    cost13to64 = int(input('[?]13~64歲報價: '))
-    cost65 = int(input('[?]65歲以上報價: '))
-    # cost_3 = 0
-    # cost4to6 = 500
-    # cost7to12 = 1000
-    # cost13to64 = 1500
-    # cost65 = 1000
-    return [cost_3, cost4to6, cost7to12, cost13to64, cost65]
+    cost_list = list()
+    print('[*]在數字後面補上「+」，即可設定均一價。')
+    print('[*]例如: 1000+ ，等於是設定均一價為1000元。')
+
+    for years_old in ('3歲以下', '4~6歲', '7~12歲', '13~64歲', '65歲以上'):
+        _in = input(f'[?]{years_old}報價: ')
+        if '+' in _in:
+            return [int(_in.removesuffix('+')) for _ in range(5)]
+        else:
+            try:
+                cost_list.append(int(_in))
+            except ValueError:
+                is_digit = False
+                while not is_digit:
+                    _in = input('[!]請輸入數字...  : ')
+                    if '+' in _in:
+                        return [int(_in.removesuffix('+')) for _ in range(5)]
+                    is_digit = True
+    return cost_list
 
 def clearConsole() -> None:
     command = "clear"

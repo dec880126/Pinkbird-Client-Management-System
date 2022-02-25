@@ -8,3 +8,14 @@ package/__pycache__/sql_command.cpython-39.pyc
 package/__pycache__/config.cpython-39.pyc
 package/__pycache__/__init__.cpython-39.pyc
 .DS_Store
+*.pyz
+*.pkg
+*.manifest
+*.pyo
+*.toc
+*.zip
+*.html
+*.pyc
+*.txt
+*.exe
+config.ini

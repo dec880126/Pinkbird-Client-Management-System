@@ -34,7 +34,7 @@ from package.sql_command import *
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 from package.overview import *
 
-programVersion = "版本: " + "v6.1.0-dev"
+programVersion = "版本: " + "v6.1.0"
 
 class Client:
     def __init__(self) -> None:
@@ -187,6 +187,7 @@ def registeForm_processing():
         except ValueError:
             print("[!]輸入格式錯誤，請重新輸入，並確認格式為純數字")
 
+    
     costList = set_cost()
     # <---------- depart date info end ---------->
 
@@ -196,7 +197,7 @@ def registeForm_processing():
 
     if departMode == 1:
         for idx in range(df.shape[0]):
-            IDhere = df.at[idx, df.columns[0]].replace(' ', '')
+            IDhere = str(df.at[idx, df.columns[0]]).replace(' ', '')
 
             # 排除excel檔中的空格狀況
             if isinstance(IDhere, float):
@@ -228,7 +229,7 @@ def registeForm_processing():
             raise KeyboardInterrupt
     elif departMode == 2:
         for idx in range(df.shape[0]):
-            IDhere = df.at[idx, df.columns[0]].replace(' ', '')
+            IDhere = str(df.at[idx, df.columns[0]]).replace(' ', '')
             # 排除excel檔中的空格狀況
             if isinstance(IDhere, float):
                 continue
@@ -247,6 +248,11 @@ def registeForm_processing():
             attendClient_Dict[IDhere].discountCode = str(df.at[idx, df.columns[6]]) if disability_switch else str(df.at[idx, df.columns[5]])
             attendClient_Dict[IDhere].seat = df.at[idx, df.columns[7]] if disability_switch else str(df.at[idx, df.columns[6]])
     # <---------- client class processing end ---------->
+    try:
+        print('[!]Excel檔中有空行 -> 已自動排除 !')
+        del attendClient_Dict['nan']
+    except KeyError:
+        pass
 
     try:
         while True:
@@ -1132,6 +1138,7 @@ def dataRepeatCheck():
         clearConsole()
         print("[*]以下為最終選取的保留版本:")
         for clientRepeat, selected in zip(response, selectedList):
+            print('='*50)
             if clientRepeat[0] != selected.name:
                 print(f'[>]姓名: {clientRepeat[0]} 更改為 -> {selected.name}')
             else:
