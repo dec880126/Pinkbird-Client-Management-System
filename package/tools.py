@@ -50,8 +50,10 @@ def xlsx_DataFrame(clientList: list, mode: str) -> DataFrame:
                 "特殊需求": [client.specialNeeds for client in clientList],
                 "房型": [client.roomType for client in clientList],
                 "同房者": [client.roommate for client in clientList],
-                "團費": [client.cost for client in clientList],
-                "折扣碼": [client.discountUsed for client in clientList],
+                "原始團費": [int(client.orgCost) for client in clientList],
+                "折扣": [int(client.discountValue) for client in clientList],
+                # "價格": [int(client.orgCost) - int(client.discountValue) for client in clientList],
+                "價格": [f'=I{int(idx) + 2}-J{int(idx) + 2}' for idx, x in enumerate(clientList)],
                 "社群暱稱": [client.nickName for client in clientList],
                 "警告訊息": [client.alertMsg for client in clientList]
             }
@@ -67,8 +69,10 @@ def xlsx_DataFrame(clientList: list, mode: str) -> DataFrame:
                 "上車點": [client.location for client in clientList],
                 "餐食": [client.foodType for client in clientList],
                 "特殊需求": [client.specialNeeds for client in clientList],
-                "團費": [client.cost for client in clientList],
-                "折扣碼": [client.discountUsed for client in clientList],
+                "原始團費": [int(client.orgCost) for client in clientList],
+                "折扣": [int(client.discountValue) for client in clientList],
+                # "價格": [int(client.orgCost) - int(client.discountValue) for client in clientList],
+                "價格": [f'=I{int(idx) + 2}-J{int(idx) + 2}' for idx, x in enumerate(clientList)],
                 "社群暱稱": [client.nickName for client in clientList],
                 "警告訊息": [client.alertMsg for client in clientList]
             }
