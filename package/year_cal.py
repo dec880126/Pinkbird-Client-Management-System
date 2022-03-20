@@ -57,11 +57,18 @@ def get_years_old(birth, day):
     elif '_' in birth:
         birthSpilt = birth.split('_')
 
-    birth = datetime.date(
-        year=int(birthSpilt[0])+1911,
-        month=int(birthSpilt[1]),
-        day=int(birthSpilt[2])
-    )
+    try:
+        birth = datetime.date(
+            year=int(birthSpilt[0])+1911,
+            month=int(birthSpilt[1]),
+            day=int(birthSpilt[2])
+        )
+    except ValueError:
+        birth = datetime.date(
+            year=int(birthSpilt[0])+1911,
+            month=int(birthSpilt[1]),
+            day=int(birthSpilt[2]) - 1
+        )
     return minus_result(day, birth)
 
 # for birth in birthList:
