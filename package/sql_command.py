@@ -68,7 +68,21 @@ def editCommand(listFrom: str, key_toUpdate: list, value_toUpdate: list, searchB
     editCommand("資料表", "欲設定之欄位", "欲設定之值", "搜尋條件", "搜尋值")
      - UPDATE `資料表` SET `欲設定之欄位`= '欲設定之值' WHERE `搜尋條件` = '搜尋值';
     """
-    return "UPDATE `" + str(listFrom) + "` SET `" + str(key_toUpdate) + "`='" + str(value_toUpdate) + "' WHERE `" + str(searchBy_key) + "` = '" + str(searchBy_value) + "'"
+    def list_or_tuple():
+        is_list = isinstance(key_toUpdate, list) and isinstance(value_toUpdate, list)
+        is_tuple = isinstance(key_toUpdate, tuple) and isinstance(value_toUpdate, tuple)
+        return is_list or is_tuple
+
+    if list_or_tuple():
+        result_command = ""
+        for k, v in zip(key_toUpdate, value_toUpdate):
+            if isinstance(v, int):
+                result_command += f"UPDATE `{listFrom}` SET `{k}`={v} WHERE `{searchBy_key}`='{searchBy_value}';\n"
+            if isinstance(v, str):
+                result_command += f"UPDATE `{listFrom}` SET `{k}`='{v}' WHERE `{searchBy_key}`='{searchBy_value}';\n"
+        return result_command
+    else:
+        return "UPDATE `" + str(listFrom) + "` SET `" + str(key_toUpdate) + "`='" + str(value_toUpdate) + "' WHERE `" + str(searchBy_key) + "` = '" + str(searchBy_value) + "'"
 
 def countCommand(listfrom: str, column: str = None, value: str = None) -> str:
     """
@@ -193,4 +207,3 @@ def writeTravelLog(connect: Connection, date: str, groupName: str, days: int, co
         instruction=insertCommand('DEPART_LOG', tuple(data.keys()), tuple(data.values())),
         is_commit=True
     )
-
