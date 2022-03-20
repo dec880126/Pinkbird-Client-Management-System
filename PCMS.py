@@ -34,7 +34,6 @@ from package.sql_command import *
 from package.tools import set_cost, clearConsole, xlsx_DataFrame, default
 from package.overview import *
 
-programVersion = "版本: " + "v6.1.1"
 
 class Client:
     def __init__(self) -> None:
@@ -48,9 +47,10 @@ class Client:
         self.specialNeeds = "無"
         self.roomType = "無"
         self.roommate = "無"
-        self.cost = "無"
+        self.orgCost = "無"
         self.discountCode = "無"
         self.discountUsed = "無"
+        self.discountValue = 0
         self.nickName = "無"
         self.alertMsg = "無"
         self.yearsOld = "無"
@@ -349,7 +349,7 @@ def registeForm_processing():
                 cost = costList[3]
             elif yearsOld >= 65:
                 cost = costList[4]
-            client.cost = cost
+            client.orgCost = cost
             # <---------- cost setting end ---------->
 
             # <---------- code checker start ---------->
@@ -372,6 +372,7 @@ def registeForm_processing():
                     try:
                         illegal = False
                         codeDeadline = codeDeadline[0].split(".")  # codeDeadline = [YYYY, MM, DD]
+                        codeDeadline_List = codeDeadline[0].split(".")  # codeDeadline = [YYYY, MM, DD]
                     except TypeError:
                         illegal = True
 
@@ -413,23 +414,26 @@ def registeForm_processing():
 
                         if code_valid:
                             codeHasBeenUsed = False
-                            originalCost = cost
-                            cost -= code_discount
-                            client.cost = cost
+                            client.orgCost = cost
+                            client.discountValue = code_discount
+                            
                             # 序號在有效期限內才執行兌換程序
-                            sql_operator(
-                                connect=conn,
-                                instruction=editCommand(
-                                    listFrom='旅遊金序號',
-                                    key_toUpdate=['是否使用過', '使用者', '使用日期'],
-                                    value_toUpdate=[1, item[0], str(departDay)],
-                                    searchBy_key='序號',
-                                    searchBy_value=client.discountCode
-                                ),
-                                is_fetchAll=False,
-                                is_commit=True
-                            )
-                            print(f"[!]{item[0]} 兌換了 {code_discount} 元的優惠券!     詳細資訊: {originalCost}元 -> {client.cost}元")
+                            for k, v in zip(
+                                ['是否使用過', '使用者', '使用日期'], [1, item[0], str(departDay)]
+                            ):
+                                sql_operator(
+                                    connect=conn,
+                                    instruction=editCommand(
+                                        listFrom='旅遊金序號',
+                                        key_toUpdate=k,
+                                        value_toUpdate=v,
+                                        searchBy_key='序號',
+                                        searchBy_value=client.discountCode
+                                    ),
+                                    is_fetchAll=False,
+                                    is_commit=True
+                                )
+                            print(f"[!]{item[0]} 兌換了 {code_discount} 元的優惠券!     詳細資訊: {client.orgCost}元 -> {client.orgCost - client.discountValue}元")
                         else:
                             warningFlag = True
                             codeHasBeenUsed = True
@@ -473,14 +477,14 @@ def registeForm_processing():
             )
             # <---------- total travel days end ---------->
 
-            client.discountUsed = "是" if code_valid else "否"
+            client.discountUsed = code_discount if code_valid else 0
 
             if warningFlag:
                 client.alertMsg = ""
                 if codeHasBeenUsed:
                     client.alertMsg += "序號已被使用過 "
                 if codeExpired:
-                    client.alertMsg += f'序號已於 {".".join(codeDeadline)} 過期 '
+                    client.alertMsg += f'序號已於 {codeDeadline} 過期 '
                 if not code_exist:
                     client.alertMsg += f'序號: {client.discountCode} 不存在 '
 
@@ -1464,7 +1468,6 @@ if __name__ == "__main__":
         clearConsole()
         print("[*]========================================")
         print("[*]" + "粉鳥旅行社會員資料庫管理系統".center(25))
-        print("[*]" + programVersion.center(35))
         print("[*]========================================")
         # 資料庫參數設定
         db_settings = {
@@ -1607,7 +1610,6 @@ if __name__ == "__main__":
     while True:
         print("[*]========================================")
         print("[*]" + "粉鳥旅行社會員資料庫管理系統".center(25))
-        print("[*]" + programVersion.center(35))
         print("[*]========================================")
         print(f'[*]目前登入身分為: {db_settings["user"]}')
         print(f'[*]登入時間為: {loginTime.strftime("%Y-%m-%d %H:%M:%S")}')
